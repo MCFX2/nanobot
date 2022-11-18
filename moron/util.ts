@@ -446,6 +446,10 @@ export function twitterTweetsToTweets(
 								if (media.url) {
 									newTweet.embedImages.push(media.url);
 								}
+							} else if (media.type === 'animated_gif') {
+								if (media.variants) {
+									newTweet.embedVideos.push(media.variants[0].url);
+								}
 							} else {
 								logger.log(
 									'unknown media type: ' + media.type,
