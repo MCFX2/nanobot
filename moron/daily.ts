@@ -1,6 +1,6 @@
 const { serverLog } = require('../groche-channels.json');
 import { Logger, WarningLevel } from './logger';
-import { Client, Message } from 'discord.js';
+import { Client, Message, TextBasedChannel } from 'discord.js';
 import { check_xkcd, init_xkcd } from './feeds/xkcd';
 import * as cron from 'cron';
 import { check_normie, init_normie } from './feeds/normie';
@@ -58,7 +58,7 @@ const jobs: Job[] = [
 	make_job('25 11 * * *', init_xkcd, check_xkcd, 'XKCD'),
 	make_job('40 7,9,18,23 * * *', init_normie, check_normie, 'normie'),
 	make_job('35 14 * * *', init_smbc, check_smbc, 'SMBC'),
-	make_job('2/15 * * * *', init_twitfollow, check_twitfollow, 'Twitfollow'),
+	make_job('3/30 * * * *', init_twitfollow, check_twitfollow, 'Twitfollow'),
 ];
 
 let activeJobs: cron.CronJob[] = [];

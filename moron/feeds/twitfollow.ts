@@ -221,11 +221,8 @@ function twitterTimelineTweetsToTweets(
 							newTweet.embedImages.push(media.url);
 						}
 					} else if (media.type === 'animated_gif') {
-						logger.log('animated_gif details:');
-						logger.log(media.url);
 						if (media.variants) {
-							logger.log('variants found too');
-							logger.log(JSON.stringify(media.variants));
+							newTweet.embedVideos.push(media.variants[0].url);
 						}
 					} else {
 						logger.log('unknown format: ' + media.type, WarningLevel.Warning);
