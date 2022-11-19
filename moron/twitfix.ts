@@ -1,35 +1,30 @@
 import { Client as TwitterClient } from 'twitter-api-sdk';
-import {
-	APIEmbed,
-	AttachmentBuilder,
-	Client as DiscordClient,
-	EmbedBuilder,
-	Message,
-	TextChannel,
-} from 'discord.js';
+import { Client as DiscordClient, Message } from 'discord.js';
 import { twitterBearerToken } from '../tokens.json';
 import { Logger, WarningLevel } from './logger';
-import { registerMessageListener } from '..';
 import isUrl from 'is-url';
-import { isUrlDomain, Tweet, twitterTweetsToTweets } from './util';
+import { twitterTweetsToTweets } from './util';
+import { MoronModule } from './moronmodule';
 
 let discordClient: DiscordClient;
 let twitterClient: TwitterClient;
 
 const logger: Logger = new Logger('twitfix', WarningLevel.Notice);
 
-export async function twitfix_init(clientInstance: DiscordClient) {
+export const TwitFix: MoronModule = {
+	name: 'twitfix',
+	onInit: twitfix_init,
+	onMessageSend: onMessageSend,
+};
+
+async function twitfix_init(clientInstance: DiscordClient) {
 	discordClient = clientInstance;
 	twitterClient = new TwitterClient(twitterBearerToken);
-
-	registerMessageListener(onMessageSend);
 
 	logger.log('Initialized twitfix');
 }
 
 async function handleTweets(msg: Message, postIds: string[]) {
-	msg.channel.sendTyping();
-
 	const { data, includes, errors } = await twitterClient.tweets.findTweetsById({
 		ids: postIds,
 		'tweet.fields': ['attachments', 'author_id', 'created_at'],

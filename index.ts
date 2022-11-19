@@ -1,11 +1,9 @@
 import {
 	ActivityType,
-	CacheType,
 	Client,
 	Collection,
 	GatewayIntentBits,
 	Interaction,
-	Message,
 	MessageReaction,
 	Partials,
 	SlashCommandBuilder,
@@ -16,12 +14,11 @@ import { Chatty } from './moron/chatty';
 import { Reactor } from './moron/reactor';
 import { daily_init } from './moron/daily';
 import { stars_init } from './moron/stars';
-import { twitfix_init } from './moron/twitfix';
-
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { MoronModule } from './moron/moronmodule';
 import { TwitFollow } from './moron/feeds/twitfollow';
+import { TwitFix } from './moron/twitfix';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -105,11 +102,11 @@ loadAllCommands();
 
 // init modules
 
-let modules: MoronModule[] = [Reactor, TwitFollow, Chatty];
+let modules: MoronModule[] = [Reactor, TwitFollow, Chatty, TwitFix];
 
 type InitCallback = (client: Client) => Promise<void>;
 
-let initCallbacks: InitCallback[] = [stars_init, daily_init, twitfix_init];
+let initCallbacks: InitCallback[] = [stars_init, daily_init];
 
 client.once('ready', async () => {
 	// init modules
@@ -193,29 +190,12 @@ client.on('interactionCreate', async interaction => {
 /// messages
 ///
 
-type MessageCallback = (message: Message<boolean>) => Promise<void>;
-
-let messageCallbacks: MessageCallback[] = [];
-
-export function registerMessageListener(listener: MessageCallback) {
-	messageCallbacks.push(listener);
-}
-
 client.on('messageCreate', async msg => {
 	if (!client.user || msg.author.id == client.user.id) return;
 
 	if (msg.partial) {
 		msg = await msg.fetch();
 	}
-
-	messageCallbacks.forEach(cb => {
-		try {
-			cb(msg);
-		} catch (err: any) {
-			logger.log('Exception thrown handling message', WarningLevel.Error);
-			logger.log(err, WarningLevel.Error);
-		}
-	});
 
 	modules.forEach(mod => {
 		try {
