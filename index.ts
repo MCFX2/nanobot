@@ -13,13 +13,15 @@ import {
 import { token } from './tokens.json';
 import { Logger, WarningLevel } from './moron/logger';
 import { chatty_init } from './moron/chatty';
-import { reactor_init } from './moron/reactor';
+import { Reactor } from './moron/reactor';
 import { daily_init } from './moron/daily';
 import { stars_init } from './moron/stars';
 import { twitfix_init } from './moron/twitfix';
 
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { MoronModule } from './moron/moronmodule';
+import { TwitFollow } from './moron/feeds/twitfollow';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -103,11 +105,12 @@ loadAllCommands();
 
 // init modules
 
+let modules: MoronModule[] = [Reactor, TwitFollow];
+
 type InitCallback = (client: Client) => Promise<void>;
 
 let initCallbacks: InitCallback[] = [
 	stars_init,
-	reactor_init,
 	chatty_init,
 	daily_init,
 	twitfix_init,
@@ -121,7 +124,21 @@ client.once('ready', async () => {
 				cb(client);
 			} catch (err: any) {
 				logger.log(
-					'Exception thrown when initializing module',
+					'Exception thrown when initializing module ' + cb.name,
+					WarningLevel.Error,
+				);
+				logger.log(err, WarningLevel.Error);
+			}
+		}),
+	);
+
+	await Promise.allSettled(
+		modules.map(mod => {
+			try {
+				if (mod.onInit) mod.onInit(client);
+			} catch (err: any) {
+				logger.log(
+					'Exception thrown when initializing module ' + mod.name,
 					WarningLevel.Error,
 				);
 				logger.log(err, WarningLevel.Error);
@@ -206,6 +223,18 @@ client.on('messageCreate', async msg => {
 			cb(msg);
 		} catch (err: any) {
 			logger.log('Exception thrown handling message', WarningLevel.Error);
+			logger.log(err, WarningLevel.Error);
+		}
+	});
+
+	modules.forEach(mod => {
+		try {
+			if (mod.onMessageSend) mod.onMessageSend(msg);
+		} catch (err: any) {
+			logger.log(
+				'Exception thrown handling message in module ' + mod.name,
+				WarningLevel.Error,
+			);
 			logger.log(err, WarningLevel.Error);
 		}
 	});

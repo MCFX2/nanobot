@@ -2,18 +2,9 @@ import * as fs from 'fs';
 import * as settings from '../config/general.json';
 import { Logger, WarningLevel } from './logger';
 import HtmlParser, { HTMLElement } from 'node-html-parser';
-import {
-	Channel,
-	EmbedBuilder,
-	Guild,
-	GuildEmoji,
-	TextBasedChannel,
-	VoiceBasedChannel,
-	VoiceChannel,
-} from 'discord.js';
+import { EmbedBuilder, Guild, GuildEmoji } from 'discord.js';
 import isUrl from 'is-url';
 import { components } from 'twitter-api-sdk/dist/gen/openapi-types';
-import { TweetV2PaginableTimelineResult } from 'twitter-api-v2';
 ///
 /// set up logger for util functions
 ///
@@ -191,7 +182,11 @@ export async function getEmote(
 ): Promise<GuildEmoji | undefined> {
 	if (!guild) return undefined;
 
-	return await guild.emojis.fetch(emoteId);
+	try {
+		return await guild.emojis.fetch(emoteId);
+	} catch (err: any) {
+		return undefined;
+	}
 }
 
 // converts <:emote:1234567890> to 1234567890

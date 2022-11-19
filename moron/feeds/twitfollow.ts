@@ -10,7 +10,6 @@ import {
 	Interaction,
 	Message,
 	MessageComponentInteraction,
-	SelectMenuBuilder,
 	TextChannel,
 } from 'discord.js';
 import { Logger, WarningLevel } from '../logger';
@@ -27,16 +26,19 @@ import {
 	isUrlDomain,
 	readCacheFileAsJson,
 	Tweet,
-	TweetMediaItem,
-	twitterTweetsToTweets,
 	writeCacheFile,
 } from '../util';
-import { registerInteractionListener } from '../..';
+import { MoronModule } from '../moronmodule';
 
 let discordClient: DiscordClient;
 let twitterClient: TwitterApiReadOnly;
 
 const logger: Logger = new Logger('feeds/twitfollow', WarningLevel.Notice);
+
+export const TwitFollow: MoronModule = {
+	name: 'twitfollow',
+	onInteract: twitfollow_interactionCreate,
+};
 
 interface FollowSettings {
 	lastPost: string;
@@ -159,8 +161,6 @@ export async function init_twitfollow(clientInstance: DiscordClient) {
 			WarningLevel.Warning,
 		);
 	}
-
-	registerInteractionListener(twitfollow_interactionCreate);
 
 	logger.log('Initialized twitfollow');
 }
