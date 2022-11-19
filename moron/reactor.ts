@@ -1,8 +1,15 @@
 import { Client, Message } from 'discord.js';
 import { registerMessageListener } from '..';
 import { Logger, WarningLevel } from './logger';
-import { doesMatch, emoteNameToId, getEmote } from './util';
-const { serverLog } = require('../groche-channels.json');
+import {
+	doesMatch,
+	emoteNameToId,
+	getEmote,
+	readCacheFileAsJson,
+	StringMatch,
+	writeCacheFile,
+} from './util';
+import { serverLog } from '../groche-channels.json';
 import {
 	emoteHmmm,
 	emoteJii,
@@ -34,10 +41,76 @@ let client: Client;
 
 let logger: Logger = new Logger('reactor', WarningLevel.Warning);
 
+let reactions: ReactTrigger[];
+
+function updateCache() {
+	const possibleEmojis: string[] = [...new Set(reactions.map(r => r.emoji))];
+
+	let emojiIndex: any = {};
+
+	possibleEmojis.forEach(emoji => {
+		const matches = reactions.filter(reaction => reaction.emoji === emoji);
+		matches.forEach(match => {
+			const alreadyDefined = emojiIndex.hasOwnProperty(match.emoji);
+			if (!alreadyDefined) {
+				emojiIndex[match.emoji] = [];
+				emojiIndex[match.emoji].push(
+					(match.ignoreCase === undefined || match.ignoreCase === true) &&
+						(match.ignoreSymb === undefined || match.ignoreSymb === true)
+						? match.word
+						: {
+								word: match.word,
+								ignoreCase: match.ignoreCase,
+								ignoreSymb: match.ignoreSymb,
+						  },
+				);
+			} else {
+				emojiIndex[match.emoji].push(
+					(match.ignoreCase === undefined || match.ignoreCase === true) &&
+						(match.ignoreSymb === undefined || match.ignoreSymb === true)
+						? match.word
+						: {
+								word: match.word,
+								ignoreCase: match.ignoreCase,
+								ignoreSymb: match.ignoreSymb,
+						  },
+				);
+			}
+		});
+	});
+
+	writeCacheFile(
+		'reactor.json',
+		Buffer.from(JSON.stringify(emojiIndex, null, '\t')),
+	);
+}
+
 export async function reactor_init(clientInstance: Client) {
 	client = clientInstance;
 
 	registerMessageListener(reactor_onMessageSend);
+
+	// load reaction triggers
+	const loadedReactions = readCacheFileAsJson('reactor.json');
+	if (!reactions) {
+		logger.log('Failed to load reaction list', WarningLevel.Error);
+		reactions = [];
+	} else {
+		Object.keys(loadedReactions).forEach(emoji => {
+			loadedReactions[emoji].forEach((trigger: string | ReactCondition) => {
+				if (typeof trigger === 'string') {
+					reactions.push({ emoji: emoji, word: trigger });
+				} else {
+					reactions.push({
+						emoji: emoji,
+						word: trigger.word,
+						ignoreCase: trigger.ignoreCase,
+						ignoreSymb: trigger.ignoreSymb,
+					});
+				}
+			});
+		});
+	}
 }
 
 async function reactWithEmoji(msg: Message, emojiName: string) {
@@ -89,6 +162,19 @@ function asciiBuzzword(
 		return true;
 	}
 	return false;
+}
+
+interface ReactCondition {
+	word: string;
+	ignoreSymb?: boolean;
+	ignoreCase?: boolean;
+}
+
+interface ReactTrigger {
+	word: string;
+	emoji: string;
+	ignoreSymb?: boolean;
+	ignoreCase?: boolean;
 }
 
 const buzzwordList = [
@@ -201,6 +287,29 @@ export async function reactor_onMessageSend(msg: Message) {
 
 	buzzwordList.every((fn: (m: Message) => boolean) => {
 		if (fn(msg)) {
+			return Math.random() > 0.5;
+		}
+		return true;
+	});
+
+	reactions.every(reaction => {
+		if (
+			!reaction.emoji.startsWith('<')
+				? asciiBuzzword(
+						msg,
+						reaction.word,
+						reaction.emoji,
+						reaction.ignoreSymb,
+						reaction.ignoreCase,
+				  )
+				: emojiBuzzword(
+						msg,
+						reaction.word,
+						reaction.emoji,
+						reaction.ignoreSymb,
+						reaction.ignoreCase,
+				  )
+		) {
 			return Math.random() > 0.5;
 		}
 		return true;
