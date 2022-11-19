@@ -1,28 +1,23 @@
-/*
- * Functionality for the star system
- */
 import {
 	Client,
 	EmbedBuilder,
-	Emoji,
 	GuildEmoji,
 	Message,
 	MessageReaction,
-	MessageType,
 	PartialMessage,
 	ReactionEmoji,
 	TextChannel,
 } from 'discord.js';
-const { iconicMemes, serverLog } = require('../groche-channels.json');
+import { iconicMemes, serverLog } from '../groche-channels.json';
 import * as fs from 'fs';
-import { registerReactionListener } from '..';
 import { Logger, WarningLevel } from './logger';
-const {
+import {
 	StarDBFolder,
 	StarDBFile,
 	ReactsToTrigger,
-} = require('../config/stars.json');
+} from '../config/stars.json';
 import { Error } from './util';
+import { MoronModule } from './moronmodule';
 
 /*
 	Enables dev mode. Differences:
@@ -36,6 +31,12 @@ let devMode: boolean = false;
 
 let logger: Logger = new Logger('stars', WarningLevel.Warning);
 
+export const Stars: MoronModule = {
+	name: 'stars',
+	onInit: stars_init,
+	onReactionAdd: stars_onStarAdded,
+};
+
 let pinnedMessages: string[] = [];
 const pinnedMessagesFile: string = StarDBFolder + StarDBFile;
 
@@ -43,9 +44,8 @@ let pinnedMessagesLoaded: boolean = false;
 
 let clientInstance: Client;
 
-export async function stars_init(client: Client) {
+async function stars_init(client: Client) {
 	clientInstance = client;
-	registerReactionListener(stars_onStarAdded);
 
 	if (!devMode) {
 		// prod-only code
@@ -105,7 +105,6 @@ async function pinMessage(
 	client: Client<boolean>,
 	reactType: GuildEmoji | ReactionEmoji,
 	post: Message<boolean> | PartialMessage,
-	count: number,
 ) {
 	// verify it is not already starred and add it to list if not
 	if (await addPin(post.id)) return;
@@ -157,12 +156,7 @@ async function pinMessage(
 async function stars_onStarAdded(reaction: MessageReaction) {
 	if (reaction.count !== null) {
 		if (devMode || reaction.count >= ReactsToTrigger) {
-			pinMessage(
-				clientInstance,
-				reaction.emoji,
-				reaction.message,
-				reaction.count,
-			);
+			pinMessage(clientInstance, reaction.emoji, reaction.message);
 		}
 	}
 }

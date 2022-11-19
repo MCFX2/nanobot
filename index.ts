@@ -13,7 +13,7 @@ import { Logger, WarningLevel } from './moron/logger';
 import { Chatty } from './moron/chatty';
 import { Reactor } from './moron/reactor';
 import { daily_init } from './moron/daily';
-import { stars_init } from './moron/stars';
+import { Stars } from './moron/stars';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { MoronModule } from './moron/moronmodule';
@@ -102,11 +102,11 @@ loadAllCommands();
 
 // init modules
 
-let modules: MoronModule[] = [Reactor, TwitFollow, Chatty, TwitFix];
+let modules: MoronModule[] = [Reactor, TwitFollow, Chatty, TwitFix, Stars];
 
 type InitCallback = (client: Client) => Promise<void>;
 
-let initCallbacks: InitCallback[] = [stars_init, daily_init];
+let initCallbacks: InitCallback[] = [daily_init];
 
 client.once('ready', async () => {
 	// init modules
@@ -218,9 +218,11 @@ type ReactionCallback = (reaction: MessageReaction) => Promise<void>;
 
 let reactionCallbacks: ReactionCallback[] = [];
 
+/*
 export function registerReactionListener(listener: ReactionCallback) {
 	reactionCallbacks.push(listener);
 }
+*/
 
 client.on('messageReactionAdd', async react => {
 	if (react.me) return;
