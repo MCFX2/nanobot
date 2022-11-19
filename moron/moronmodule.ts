@@ -12,5 +12,5 @@ export class MoronModule {
 	onInit?: (client: Client) => void;
 	onMessageSend?: (msg: Message) => void;
 	onReactionAdd?: (react: MessageReaction) => void;
-	onInteract?: (interaction: Interaction<CacheType>) => void;
+	onInteract?: (interaction: Interaction<CacheType>) => boolean;
 }

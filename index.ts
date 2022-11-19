@@ -154,18 +154,6 @@ client.once('ready', async () => {
 /// commands
 ///
 
-type InteractionCallback = (
-	message: Interaction<CacheType>,
-) => Promise<boolean>;
-
-let interactionCallbacks: InteractionCallback[] = [];
-
-// return true in your listener if you handled the command successfully
-// this ensures multiple different systems don't end up responding to the same command
-export function registerInteractionListener(listener: InteractionCallback) {
-	interactionCallbacks.push(listener);
-}
-
 client.on('interactionCreate', async interaction => {
 	if (interaction.isChatInputCommand()) {
 		const command = client.commands.get(interaction.commandName);
@@ -188,10 +176,17 @@ client.on('interactionCreate', async interaction => {
 		}
 	} else {
 		// fall back to external interaction handlers
-		interactionCallbacks.every(async cb => {
+		modules.every(mod => {
 			try {
-				return !(await cb(interaction));
+				if (mod.onInteract) {
+					return !mod.onInteract(interaction);
+				}
+				return true;
 			} catch (err: any) {
+				logger.log(
+					'exception thrown handling interaction in module ' + mod.name,
+					WarningLevel.Error,
+				);
 				logger.log(err, WarningLevel.Error);
 				return false;
 			}

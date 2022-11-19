@@ -407,16 +407,16 @@ async function manuallyAcceptMessage(message: Message) {
 	message.delete();
 }
 
-async function twitfollow_interactionCreate(
+function twitfollow_interactionCreate(
 	interaction: Interaction<CacheType>,
-): Promise<boolean> {
+): boolean {
 	if (interaction.isMessageComponent()) {
 		const interact = interaction as MessageComponentInteraction;
 		if (interact.componentType === ComponentType.Button) {
 			if (interact.customId.startsWith('twitfollow-')) {
 				const subcommand = interact.customId.substring('twitfollow-'.length);
 				if (subcommand.startsWith('accept-')) {
-					await manuallyAcceptMessage(interact.message);
+					manuallyAcceptMessage(interact.message);
 				} else if (subcommand.startsWith('reject-')) {
 					manuallyRejectMessage(interact.message);
 				} else {
