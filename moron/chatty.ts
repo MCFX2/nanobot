@@ -1,23 +1,10 @@
-import {
-	Client,
-	EmbedBuilder,
-	Emoji,
-	GuildEmoji,
-	Message,
-	MessageReplyOptions,
-	MessageType,
-	PartialMessage,
-	ReactionEmoji,
-	TextChannel,
-} from 'discord.js';
-import { registerMessageListener } from '..';
+import { Client, Message } from 'discord.js';
 import { Logger, WarningLevel } from './logger';
+import { MoronModule } from './moronmodule';
 import {
 	StringMatch,
 	doesMatch,
 	stringSet,
-	whereMatch,
-	getEmote,
 	getEarliestMatch,
 	getLastMatch,
 } from './util';
@@ -30,6 +17,12 @@ const logger: Logger = new Logger(
 	'chatty',
 	devMode ? WarningLevel.Notice : WarningLevel.Warning,
 );
+
+export const Chatty: MoronModule = {
+	name: 'chatty',
+	onInit: chatty_init,
+	onMessageSend: chatty_onMessageSend,
+};
 
 function triggerIfMsgContains(
 	msg: Message,
@@ -152,17 +145,15 @@ function smartReply(
 
 let client: Client;
 
-export async function chatty_init(clientInstance: Client) {
+async function chatty_init(clientInstance: Client) {
 	if (devMode) {
 		logger.log('Initialized in dev mode');
 	}
 
 	client = clientInstance;
-
-	registerMessageListener(chatty_onMessageSend);
 }
 
-export async function chatty_onMessageSend(msg: Message) {
+async function chatty_onMessageSend(msg: Message) {
 	if (!client || !client.user) {
 		logger.log(
 			'Message received when no client instance was set!',

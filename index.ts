@@ -12,7 +12,7 @@ import {
 } from 'discord.js';
 import { token } from './tokens.json';
 import { Logger, WarningLevel } from './moron/logger';
-import { chatty_init } from './moron/chatty';
+import { Chatty } from './moron/chatty';
 import { Reactor } from './moron/reactor';
 import { daily_init } from './moron/daily';
 import { stars_init } from './moron/stars';
@@ -105,16 +105,11 @@ loadAllCommands();
 
 // init modules
 
-let modules: MoronModule[] = [Reactor, TwitFollow];
+let modules: MoronModule[] = [Reactor, TwitFollow, Chatty];
 
 type InitCallback = (client: Client) => Promise<void>;
 
-let initCallbacks: InitCallback[] = [
-	stars_init,
-	chatty_init,
-	daily_init,
-	twitfix_init,
-];
+let initCallbacks: InitCallback[] = [stars_init, daily_init, twitfix_init];
 
 client.once('ready', async () => {
 	// init modules
