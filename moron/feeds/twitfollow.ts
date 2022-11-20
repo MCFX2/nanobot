@@ -51,7 +51,10 @@ let userCache: {
 } = {};
 
 function updateCacheFile() {
-	writeCacheFile('twitfollow.json', Buffer.from(JSON.stringify(userCache)));
+	writeCacheFile(
+		'twitfollow.json',
+		Buffer.from(JSON.stringify(userCache, null, '\t')),
+	);
 }
 
 export async function followUserCommand(
