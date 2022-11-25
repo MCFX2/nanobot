@@ -40,10 +40,13 @@ export const TwitFollow: MoronModule = {
 	onInteract: twitfollow_interactionCreate,
 };
 
+type TweetType = 'text' | 'video' | 'photo' | 'animated_gif';
+
 interface FollowSettings {
 	lastPost: string;
 	channelTarget: string;
 	vettingChannel?: string;
+	disallowedContentTypes?: TweetType[];
 }
 
 let userCache: {
@@ -327,10 +330,22 @@ async function submitPost(tweet: Tweet, settings: FollowSettings) {
 	}
 }
 
+function getTweetType(tweet: Tweet): TweetType {
+	if (tweet.embedVideos.length > 0) {
+		return 'video';
+	} else if (tweet.embedImages.length > 0) {
+		return 'photo';
+	} else {
+		return 'text';
+	}
+}
+
 async function submitVettingPost(tweet: Tweet, settings: FollowSettings) {
 	let candidateChannel: TextChannel = discordClient.channels.resolve(
 		settings.vettingChannel!,
 	) as TextChannel;
+
+	const tweetType = getTweetType(tweet);
 
 	const vettingOptions = new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder()
@@ -338,12 +353,16 @@ async function submitVettingPost(tweet: Tweet, settings: FollowSettings) {
 			.setLabel('Accept')
 			.setStyle(ButtonStyle.Primary),
 		new ButtonBuilder()
+			.setCustomId('twitfollow-disable-' + tweet.author.id + '-' + tweetType)
+			.setLabel('Unsubscribe from ' + tweetType + ' tweets')
+			.setStyle(ButtonStyle.Secondary),
+		new ButtonBuilder()
 			.setCustomId('twitfollow-reject-' + tweet.tweetId)
 			.setLabel('Reject')
 			.setStyle(ButtonStyle.Danger),
 	);
 
-	if (tweet.embedVideos.length > 0) {
+	if (tweetType === 'video') {
 		// video tweet
 		candidateChannel.send({
 			content:
@@ -351,7 +370,7 @@ async function submitVettingPost(tweet: Tweet, settings: FollowSettings) {
 				tweet.postUrl.replace('twitter.com', 'vxtwitter.com'),
 			components: [vettingOptions],
 		});
-	} else if (tweet.embedImages.length > 0) {
+	} else if (tweetType === 'photo') {
 		// image tweet
 		candidateChannel.send({
 			content: `<#${settings.channelTarget}>`,
@@ -393,10 +412,10 @@ function manuallyRejectMessage(message: Message) {
 
 async function manuallyAcceptMessage(message: Message) {
 	if (message.partial) await message.fetch();
-	const embeds = message.embeds;
-	const content = message.embeds
-		? undefined
-		: message.content.substring(message.content.indexOf(' '));
+	const spaceChar = message.content.indexOf(' ');
+	const embeds = spaceChar === -1 ? message.embeds : undefined;
+	const content =
+		spaceChar === -1 ? undefined : message.content.substring(spaceChar + 1);
 
 	const targetChannel = discordClient.channels.resolve(
 		message.content.substring(
@@ -408,6 +427,44 @@ async function manuallyAcceptMessage(message: Message) {
 	targetChannel.send({ content: content, embeds: embeds });
 
 	message.delete();
+}
+
+function disableType(user: string, tweetType: TweetType) {
+	const userEntry = userCache[user];
+	if (!userEntry) {
+		logger.log(
+			'tried to disable tweet type of ' +
+				tweetType +
+				' for not-subscribed user ' +
+				user,
+			WarningLevel.Warning,
+		);
+		return;
+	}
+
+	if (!userEntry.disallowedContentTypes) {
+		userEntry.disallowedContentTypes = [];
+	}
+
+	if (userEntry.disallowedContentTypes.includes(tweetType)) return;
+	userEntry.disallowedContentTypes.push(tweetType);
+
+	if (userEntry.disallowedContentTypes.length === 4) {
+		// all media types disabled
+		unfollowUser(user);
+	} else {
+		updateCacheFile();
+	}
+}
+
+// expects args to be in the form of 'userid-tweetype'
+// example: 1466605444-text
+// only for the interact button, outside of that use disableType() instead
+function disableButton(args: string) {
+	const separator = args.indexOf('-');
+	const author = args.substring(0, separator);
+	const tweetType = args.substring(separator + 1);
+	disableType(author, tweetType as TweetType);
 }
 
 function twitfollow_interactionCreate(
@@ -422,6 +479,8 @@ function twitfollow_interactionCreate(
 					manuallyAcceptMessage(interact.message);
 				} else if (subcommand.startsWith('reject-')) {
 					manuallyRejectMessage(interact.message);
+				} else if (subcommand.startsWith('disable-')) {
+					disableButton(subcommand);
 				} else {
 					logger.log('unknown subcommand: ' + subcommand, WarningLevel.Warning);
 				}
@@ -445,7 +504,14 @@ export async function check_twitfollow() {
 				if (tweet.tweetId > maxId) {
 					maxId = tweet.tweetId;
 				}
-				submitCandidate(tweet, element);
+				const tweetType = getTweetType(tweet);
+				if (element.disallowedContentTypes) {
+					if (
+						element.disallowedContentTypes.every(type => type !== tweetType)
+					) {
+						submitCandidate(tweet, element);
+					}
+				}
 			});
 
 			if (maxId !== element.lastPost) {

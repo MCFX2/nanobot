@@ -316,6 +316,7 @@ export class User {
 	name: string = 'unknown'; // user's display name
 	handle: string = ''; // user's @handle
 	profilePic: string = ''; // link to user's profile image
+	id: string = '0';
 }
 
 export class Tweet {
@@ -463,6 +464,7 @@ export function twitterTweetsToTweets(
 					newTweet.author.profilePic = userObj.profile_image_url ?? '';
 					newTweet.author.handle = userObj.username;
 					newTweet.author.name = userObj.name;
+					newTweet.author.id = userObj.id;
 				}
 			}
 		}
