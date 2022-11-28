@@ -20,7 +20,7 @@ import {
 	StageChannel,
 	TextChannel,
 	ThreadMember,
-	User,
+	User as DiscordUser,
 	VoiceChannel,
 } from 'discord.js';
 import isUrl from 'is-url';
@@ -510,7 +510,7 @@ export function messageMentionsUser(
 	msg: Message,
 	user:
 		| string
-		| User
+		| DiscordUser
 		| Message<boolean>
 		| GuildMember
 		| ThreadMember
