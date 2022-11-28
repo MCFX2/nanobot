@@ -390,12 +390,14 @@ async function submitVettingPost(tweet: Tweet, settings: FollowSettings) {
 					.setAuthor({
 						name: tweet.author.name + '(@' + tweet.author.handle + ')',
 						iconURL: tweet.author.profilePic,
+						url: tweet.postUrl.substring(0, tweet.postUrl.lastIndexOf('/')),
 					})
 					.setFooter({
 						text: 'Twitter',
 						iconURL: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png',
 					})
-					.setTimestamp(tweet.creationDate),
+					.setTimestamp(tweet.creationDate)
+					.setURL(tweet.postUrl),
 			],
 			components: [vettingOptions],
 		});

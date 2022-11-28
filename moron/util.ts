@@ -380,6 +380,7 @@ export function getDiscordEmbedsFromImageTweet(tweet: Tweet) {
 				.setAuthor({
 					name: tweet.author.name + '(@' + tweet.author.handle + ')',
 					iconURL: tweet.author.profilePic,
+					url: tweet.postUrl.substring(0, tweet.postUrl.lastIndexOf('/')),
 				})
 				.setImage(img)
 				.setURL(tweet.postUrl)
