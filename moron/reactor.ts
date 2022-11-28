@@ -117,10 +117,12 @@ function emojiBuzzword(
 			ignorePunctuation: ignoreSymb,
 		})
 	) {
-		logger.log(
-			'reacting to message with ' + emoji + ' because it contains ' + word,
-		);
-		reactWithEmoji(msg, emoji);
+		if (Math.random() > 0.2) {
+			logger.log(
+				'reacting to message with ' + emoji + ' because it contains ' + word,
+			);
+			reactWithEmoji(msg, emoji);
+		}
 		return true;
 	}
 	return false;
@@ -140,7 +142,7 @@ function asciiBuzzword(
 			ignorePunctuation: ignoreSymb,
 		})
 	) {
-		msg.react(emoji);
+		if (Math.random() > 0.2) msg.react(emoji);
 		return true;
 	}
 	return false;
@@ -288,25 +290,20 @@ export function reactor_onMessageSend(msg: Message) {
 	}
 
 	reactions.every(reaction => {
-		if (
-			!reaction.emoji.startsWith('<')
-				? asciiBuzzword(
-						msg,
-						reaction.word,
-						reaction.emoji,
-						reaction.ignoreSymb,
-						reaction.ignoreCase,
-				  )
-				: emojiBuzzword(
-						msg,
-						reaction.word,
-						reaction.emoji,
-						reaction.ignoreSymb,
-						reaction.ignoreCase,
-				  )
-		) {
-			return Math.random() > 0.5;
-		}
-		return true;
+		reaction.emoji.startsWith('<')
+			? asciiBuzzword(
+					msg,
+					reaction.word,
+					reaction.emoji,
+					reaction.ignoreSymb,
+					reaction.ignoreCase,
+			  )
+			: emojiBuzzword(
+					msg,
+					reaction.word,
+					reaction.emoji,
+					reaction.ignoreSymb,
+					reaction.ignoreCase,
+			  );
 	});
 }
