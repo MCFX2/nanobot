@@ -506,7 +506,7 @@ export function twitterTweetsToTweets(
 /// messaging
 ///
 
-export function messageMentionsUser(
+export function messageMentions(
 	msg: Message,
 	user:
 		| string
@@ -525,8 +525,11 @@ export function messageMentionsUser(
 		| PrivateThreadChannel
 		| PublicThreadChannel<boolean>
 		| VoiceChannel
-		| ForumChannel,
+		| ForumChannel
+		| null,
 ) {
+	if (user === null) return false;
+
 	if (msg.mentions.repliedUser) {
 		if (typeof user === 'string') {
 			if (msg.mentions.repliedUser.id === user) {

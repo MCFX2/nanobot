@@ -4,6 +4,7 @@ import {
 	doesMatch,
 	emoteNameToId,
 	getEmote,
+	messageMentions,
 	readCacheFileAsJson,
 	writeCacheFile,
 } from './util';
@@ -117,7 +118,7 @@ function emojiBuzzword(
 			ignorePunctuation: ignoreSymb,
 		})
 	) {
-		if (Math.random() > 0.2) {
+		if (messageMentions(msg, client.user) || Math.random() < 0.2) {
 			logger.log(
 				'reacting to message with ' + emoji + ' because it contains ' + word,
 			);
@@ -142,7 +143,7 @@ function asciiBuzzword(
 			ignorePunctuation: ignoreSymb,
 		})
 	) {
-		if (Math.random() > 0.2) {
+		if (messageMentions(msg, client.user) || Math.random() < 0.2) {
 			logger.log(
 				'reacting to message with ' + emoji + ' because it contains ' + word,
 			);
@@ -310,5 +311,6 @@ export function reactor_onMessageSend(msg: Message) {
 					reaction.ignoreSymb,
 					reaction.ignoreCase,
 			  );
+		return true;
 	});
 }
