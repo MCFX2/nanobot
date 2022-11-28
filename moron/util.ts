@@ -2,7 +2,27 @@ import * as fs from 'fs';
 import * as settings from '../config/general.json';
 import { Logger, WarningLevel } from './logger';
 import HtmlParser, { HTMLElement } from 'node-html-parser';
-import { EmbedBuilder, Guild, GuildEmoji } from 'discord.js';
+import {
+	CategoryChannel,
+	DMChannel,
+	EmbedBuilder,
+	ForumChannel,
+	Guild,
+	GuildEmoji,
+	GuildMember,
+	Message,
+	NewsChannel,
+	PartialDMChannel,
+	PartialGroupDMChannel,
+	PrivateThreadChannel,
+	PublicThreadChannel,
+	Role,
+	StageChannel,
+	TextChannel,
+	ThreadMember,
+	User,
+	VoiceChannel,
+} from 'discord.js';
 import isUrl from 'is-url';
 import { components } from 'twitter-api-sdk/dist/gen/openapi-types';
 ///
@@ -480,4 +500,43 @@ export function twitterTweetsToTweets(
 	});
 
 	return builtTweets;
+}
+
+///
+/// messaging
+///
+
+export function messageMentionsUser(
+	msg: Message,
+	user:
+		| string
+		| User
+		| Message<boolean>
+		| GuildMember
+		| ThreadMember
+		| Role
+		| CategoryChannel
+		| DMChannel
+		| PartialDMChannel
+		| PartialGroupDMChannel
+		| NewsChannel
+		| StageChannel
+		| TextChannel
+		| PrivateThreadChannel
+		| PublicThreadChannel<boolean>
+		| VoiceChannel
+		| ForumChannel,
+) {
+	if (msg.mentions.repliedUser) {
+		if (typeof user === 'string') {
+			if (msg.mentions.repliedUser.id === user) {
+				return true;
+			}
+		} else if ('id' in user) {
+			if (msg.mentions.repliedUser.id === user.id) {
+				return true;
+			}
+		}
+	}
+	return msg.mentions.has(user);
 }
