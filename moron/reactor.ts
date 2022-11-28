@@ -296,7 +296,7 @@ export function reactor_onMessageSend(msg: Message) {
 	}
 
 	reactions.every(reaction => {
-		reaction.emoji.startsWith('<')
+		!reaction.emoji.startsWith('<')
 			? asciiBuzzword(
 					msg,
 					reaction.word,
