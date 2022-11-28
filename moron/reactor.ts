@@ -142,7 +142,12 @@ function asciiBuzzword(
 			ignorePunctuation: ignoreSymb,
 		})
 	) {
-		if (Math.random() > 0.2) msg.react(emoji);
+		if (Math.random() > 0.2) {
+			logger.log(
+				'reacting to message with ' + emoji + ' because it contains ' + word,
+			);
+			msg.react(emoji);
+		}
 		return true;
 	}
 	return false;
