@@ -246,6 +246,8 @@ function twitterTimelineTweetsToTweets(
 			newTweet.author.name = userObj.name;
 		}
 
+		newTweet.author.id = tweet.author_id ?? '0';
+
 		newTweet.postUrl =
 			'https://twitter.com/' +
 			(newTweet.author.handle === '' ? 'twitter' : newTweet.author.handle) +
@@ -319,12 +321,14 @@ async function submitPost(tweet: Tweet, settings: FollowSettings) {
 					.setAuthor({
 						name: tweet.author.name + '(@' + tweet.author.handle + ')',
 						iconURL: tweet.author.profilePic,
+						url: tweet.postUrl.substring(0, tweet.postUrl.lastIndexOf('/')),
 					})
 					.setFooter({
 						text: 'Twitter',
 						iconURL: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png',
 					})
-					.setTimestamp(tweet.creationDate),
+					.setTimestamp(tweet.creationDate)
+					.setURL(tweet.postUrl),
 			],
 		});
 	}
@@ -480,7 +484,7 @@ function twitfollow_interactionCreate(
 				} else if (subcommand.startsWith('reject-')) {
 					manuallyRejectMessage(interact.message);
 				} else if (subcommand.startsWith('disable-')) {
-					disableButton(subcommand);
+					disableButton(subcommand.substring(subcommand.indexOf('-') + 1));
 				} else {
 					logger.log('unknown subcommand: ' + subcommand, WarningLevel.Warning);
 				}
@@ -511,6 +515,8 @@ export async function check_twitfollow() {
 					) {
 						submitCandidate(tweet, element);
 					}
+				} else {
+					submitCandidate(tweet, element);
 				}
 			});
 
