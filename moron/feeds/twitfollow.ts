@@ -466,11 +466,12 @@ function disableType(user: string, tweetType: TweetType) {
 // expects args to be in the form of 'userid-tweetype'
 // example: 1466605444-text
 // only for the interact button, outside of that use disableType() instead
-function disableButton(args: string) {
+function disableButton(args: string, msg: Message) {
 	const separator = args.indexOf('-');
 	const author = args.substring(0, separator);
 	const tweetType = args.substring(separator + 1);
 	disableType(author, tweetType as TweetType);
+	msg.delete();
 }
 
 function twitfollow_interactionCreate(
@@ -486,7 +487,10 @@ function twitfollow_interactionCreate(
 				} else if (subcommand.startsWith('reject-')) {
 					manuallyRejectMessage(interact.message);
 				} else if (subcommand.startsWith('disable-')) {
-					disableButton(subcommand.substring(subcommand.indexOf('-') + 1));
+					disableButton(
+						subcommand.substring(subcommand.indexOf('-') + 1),
+						interact.message,
+					);
 				} else {
 					logger.log('unknown subcommand: ' + subcommand, WarningLevel.Warning);
 				}
