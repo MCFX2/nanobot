@@ -497,9 +497,9 @@ function twitfollow_interactionCreate(
 				return true;
 			}
 			return false;
-		}
+		} // leave space for future component types
 		return false;
-	}
+	} // leave space for future interaction handlers
 	return false;
 }
 
