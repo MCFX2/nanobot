@@ -1,13 +1,10 @@
-const { serverLog } = require('../groche-channels.json');
 import { Logger, WarningLevel } from './logger';
-import { Client, Message, TextBasedChannel } from 'discord.js';
+import { Client } from 'discord.js';
 import { check_xkcd, init_xkcd } from './feeds/xkcd';
 import * as cron from 'cron';
 import { check_normie, init_normie } from './feeds/normie';
 import { check_smbc, init_smbc } from './feeds/smbc';
 import { check_twitfollow, init_twitfollow } from './feeds/twitfollow';
-
-const devMode = false;
 
 let client: Client;
 

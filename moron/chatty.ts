@@ -10,6 +10,11 @@ import {
 } from './util';
 const { serverLog } = require('../groche-channels.json');
 
+interface SimpleChatTrigger {
+	replies: string[];
+	triggers: StringMatch[];
+}
+
 // dev mode here makes the bot reply with 100% probability, and makes it only reply in serverLog
 const devMode: boolean = false;
 
