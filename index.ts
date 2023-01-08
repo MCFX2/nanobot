@@ -19,7 +19,7 @@ import * as fs from 'node:fs';
 import { MoronModule } from './moron/moronmodule';
 import { TwitFollow } from './moron/feeds/twitfollow';
 import { TwitFix } from './moron/twitfix';
-import { GrocheGames } from './moron/grochegames';
+import { GrocheGamesRegistration } from './moron/grochegames/registration';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -109,7 +109,7 @@ let modules: MoronModule[] = [
 	Chatty,
 	TwitFix,
 	Stars,
-	GrocheGames,
+	GrocheGamesRegistration,
 ];
 
 type InitCallback = (client: Client) => Promise<void>;
