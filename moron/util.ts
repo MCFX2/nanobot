@@ -544,3 +544,67 @@ export function messageMentions(
 	}
 	return msg.mentions.has(user);
 }
+
+///
+/// RNG utility
+///
+
+export function rollWithAdvantage(
+	min: number,
+	max: number,
+	numAdvantages: number = 2,
+	lowerIsBetter: boolean = false,
+): number {
+	const rolls: number[] = [];
+	while (numAdvantages > 0) {
+		numAdvantages--;
+		rolls.push(min + Math.random() * (max - min));
+	}
+
+	if (lowerIsBetter) {
+		return Math.min(...rolls);
+	} else {
+		return Math.max(...rolls);
+	}
+}
+
+export function rollWithDisadvantage(
+	min: number,
+	max: number,
+	numDisadvantages: number = 2,
+	lowerIsBetter: boolean = false,
+): number {
+	const rolls: number[] = [];
+	while (numDisadvantages > 0) {
+		numDisadvantages--;
+		rolls.push(min + Math.random() * (max - min));
+	}
+
+	if (lowerIsBetter) {
+		return Math.max(...rolls);
+	} else {
+		return Math.min(...rolls);
+	}
+}
+
+export function fullRoll(
+	min: number,
+	max: number,
+	advantages: number,
+	disadvantages: number,
+	lowerIsBetter: boolean = false,
+): number {
+	if (advantages === disadvantages) {
+		return min + Math.random() * (max - min);
+	}
+	while (advantages > 1 && disadvantages > 1) {
+		advantages--;
+		disadvantages--;
+	}
+
+	if (advantages > disadvantages) {
+		return rollWithAdvantage(min, max, advantages, lowerIsBetter);
+	} else {
+		return rollWithDisadvantage(min, max, disadvantages, lowerIsBetter);
+	}
+}

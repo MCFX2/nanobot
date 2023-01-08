@@ -399,6 +399,123 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		},
 	},
 	/// REGULAR ITEMS ///
+	{
+		name: 'Brass Knuckles',
+		flavorText: 'Pretty much an exoskeleton for your fist.',
+		strBonus: 1,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+	},
+	{
+		name: 'Mil-spec Vest',
+		flavorText: 'Sturdy, yet light. Might just save your life.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 1,
+		mBonus: 0,
+		legendary: false,
+	},
+	{
+		name: 'Sweet Sneakers',
+		flavorText:
+			'So good at making you run faster, they were banned at the olympics.',
+		strBonus: 0,
+		spdBonus: 1,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+	},
+	{
+		name: 'Five-leaf clover',
+		flavorText: 'Dang, so close.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+	},
+	{
+		name: 'Medpack',
+		flavorText: 'Dubious quality, but way better than nothing.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+	},
+	{
+		name: 'Car Battery Backpack',
+		flavorText:
+			'A portable defibrillator. This will bring you back from death at full health. But the insane amount of power coursing through you will give you permanent injuries.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+		onDie() {
+			if (this.holdingPlayer) {
+				this.holdingPlayer.curHP = this.holdingPlayer.maxHP;
+				// apply random debuffs
+				let debuffsLeft = Math.floor(Math.random() * 3);
 
+				while (debuffsLeft > 0) {
+					const randomDebuff = Math.floor(Math.random() * 7);
+
+					// TODO: callbacks here so players know what happened
+					switch (randomDebuff) {
+						case 0:
+							if (this.holdingPlayer.strength > 1) {
+								debuffsLeft--;
+								this.holdingPlayer.strength--;
+							}
+							break;
+						case 1:
+							if (this.holdingPlayer.speed > 1) {
+								debuffsLeft--;
+								this.holdingPlayer.speed--;
+							}
+							break;
+						case 2:
+							if (this.holdingPlayer.toughness > 1) {
+								debuffsLeft--;
+								this.holdingPlayer.toughness--;
+							}
+							break;
+						case 3:
+							if (!this.holdingPlayer.hasExpertMode) {
+								debuffsLeft--;
+								this.holdingPlayer.hasExpertMode = true;
+							}
+							break;
+						case 4:
+							if (!this.holdingPlayer.hasMoronicStrength) {
+								debuffsLeft--;
+								this.holdingPlayer.hasMoronicStrength = true;
+							}
+							break;
+						case 5:
+							if (!this.holdingPlayer.hasShortCircuit) {
+								debuffsLeft--;
+								this.holdingPlayer.hasShortCircuit = true;
+							}
+							break;
+						case 6:
+							break;
+					}
+				}
+			}
+		},
+	},
+	{
+		name: 'Brass Knuckles',
+		flavorText: 'Pretty much an exoskeleton for your fist.',
+		strBonus: 1,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+	},
 	/// LEGENDARY ITEMS ///
 ];
