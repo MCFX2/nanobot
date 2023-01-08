@@ -587,6 +587,7 @@ export function rollWithDisadvantage(
 	}
 }
 
+// advantages/disadvantages: 1 = normal roll, 2 = normal advantage/disadvantage, 3 = double etc.
 export function fullRoll(
 	min: number,
 	max: number,

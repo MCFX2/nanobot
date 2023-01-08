@@ -30,33 +30,90 @@ export interface GrocheGamesItem {
 
 	// if item is legendary (i.e. only one can ever spawn)
 	legendary: boolean;
+
+	// if item is special (i.e. it cannot spawn randomly)
+	special: boolean;
+
+	// for items that can offer advantage/disadvantage, call these to see if buff is available. not guaranteed to be deterministic.
+	givesAdvantage?: (this: GrocheGamesItem) => boolean;
+	givesDisadvantage?: (this: GrocheGamesItem) => boolean;
 }
 
-export interface GrocheGamesCombatant {
-	team: number;
+export class GrocheGamesCombatant {
+	team: number = 0;
 
-	name: string;
-	pronounHe: string;
-	pronounHim: string;
-	picUrl: string;
-	picDeadUrl: string;
+	name: string = 'unnamed';
+	pronounHe: string = 'he';
+	pronounHim: string = 'him';
+	picUrl: string = '';
+	picDeadUrl: string = '';
 
-	maxHP: number;
-	curHP: number;
-	money: number;
-	strength: number;
-	speed: number;
-	toughness: number;
+	maxHP: number = 0;
+	curHP: number = 0;
+	baseMoney: number = 0;
+	baseStrength: number = 0;
+	baseSpeed: number = 0;
+	baseToughness: number = 0;
 
 	// curses
-	hasShortCircuit: boolean;
-	hasExpertMode: boolean;
-	hasMoronicStrength: boolean;
+	hasShortCircuit: boolean = false;
+	hasExpertMode: boolean = false;
+	hasMoronicRage: boolean = false;
 
 	// blessings
-	hasInventive: boolean;
-	hasLuck: boolean;
-	hasDeliverance: boolean;
+	hasInventive: boolean = false;
+	hasLuck: boolean = false;
+	hasDeliverance: boolean = false;
 
-	inventory: GrocheGamesItem[];
+	inventory: GrocheGamesItem[] = [];
+
+	public get strength(): number {
+		let strengthMod: number = 0;
+		this.inventory.forEach(item => (strengthMod += item.strBonus));
+		return strengthMod + this.baseStrength;
+	}
+
+	public get speed(): number {
+		let speedMod: number = 0;
+		this.inventory.forEach(item => (speedMod += item.spdBonus));
+		return speedMod + this.baseSpeed;
+	}
+
+	public get toughness(): number {
+		let toughMod: number = 0;
+		this.inventory.forEach(item => (toughMod += item.tghBonus));
+		return toughMod + this.baseToughness;
+	}
+
+	public get money(): number {
+		let moneyMod: number = 0;
+		this.inventory.forEach(item => (moneyMod += item.mBonus));
+		return moneyMod + this.baseMoney;
+	}
+
+	public get totalAdvantage(): number {
+		let advantage = 1;
+
+		if (this.hasLuck) ++advantage;
+
+		this.inventory.forEach(item =>
+			item.givesAdvantage && item.givesAdvantage() ? advantage++ : null,
+		);
+
+		return advantage;
+	}
+
+	public get totalDisadvantage(): number {
+		let disadvantage = 1;
+
+		if (this.hasLuck) ++disadvantage;
+
+		this.inventory.forEach(item =>
+			item.givesDisadvantage && item.givesDisadvantage()
+				? disadvantage++
+				: null,
+		);
+
+		return disadvantage;
+	}
 }

@@ -11,6 +11,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onKill() {
 			if (this.holdingPlayer) {
 				this.holdingPlayer.inventory.splice(
@@ -36,6 +38,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onDie() {
 			if (this.holdingPlayer) {
 				this.holdingPlayer.curHP = 1;
@@ -65,6 +69,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
 
 		onItemPickedUp(otherItem: GrocheGamesItem) {
 			// TODO: need callback for these too
@@ -139,6 +144,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onItemPickedUp(otherItem: GrocheGamesItem) {
 			// TODO: need callback for these too
 			if (this.holdingPlayer) {
@@ -212,6 +219,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onItemPickedUp(otherItem: GrocheGamesItem) {
 			// TODO: need callback for these too
 			if (this.holdingPlayer) {
@@ -266,6 +275,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onItemPickedUp(otherItem: GrocheGamesItem) {
 			// TODO: need callback for these too
 			if (this.holdingPlayer) {
@@ -320,6 +331,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onItemPickedUp(otherItem: GrocheGamesItem) {
 			// TODO: need callback for these too
 			if (this.holdingPlayer) {
@@ -374,6 +387,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onDayFinished() {
 			if (this.timePassed) {
 				this.timePassed++;
@@ -406,6 +421,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 0,
 		mBonus: 0,
+		special: false,
 		legendary: false,
 	},
 	{
@@ -415,6 +431,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 1,
 		mBonus: 0,
+		special: false,
 		legendary: false,
 	},
 	{
@@ -425,6 +442,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 1,
 		tghBonus: 0,
 		mBonus: 0,
+		special: false,
 		legendary: false,
 	},
 	{
@@ -434,6 +452,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 0,
 		mBonus: 0,
+		special: false,
 		legendary: false,
 	},
 	{
@@ -443,6 +462,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 0,
 		mBonus: 0,
+		special: false,
 		legendary: false,
 	},
 	{
@@ -454,6 +474,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+
 		onDie() {
 			if (this.holdingPlayer) {
 				this.holdingPlayer.curHP = this.holdingPlayer.maxHP;
@@ -466,21 +488,21 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 					// TODO: callbacks here so players know what happened
 					switch (randomDebuff) {
 						case 0:
-							if (this.holdingPlayer.strength > 1) {
+							if (this.holdingPlayer.baseStrength > 1) {
 								debuffsLeft--;
-								this.holdingPlayer.strength--;
+								this.holdingPlayer.baseStrength--;
 							}
 							break;
 						case 1:
-							if (this.holdingPlayer.speed > 1) {
+							if (this.holdingPlayer.baseSpeed > 1) {
 								debuffsLeft--;
-								this.holdingPlayer.speed--;
+								this.holdingPlayer.baseSpeed--;
 							}
 							break;
 						case 2:
-							if (this.holdingPlayer.toughness > 1) {
+							if (this.holdingPlayer.baseToughness > 1) {
 								debuffsLeft--;
-								this.holdingPlayer.toughness--;
+								this.holdingPlayer.baseToughness--;
 							}
 							break;
 						case 3:
@@ -490,9 +512,9 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 							}
 							break;
 						case 4:
-							if (!this.holdingPlayer.hasMoronicStrength) {
+							if (!this.holdingPlayer.hasMoronicRage) {
 								debuffsLeft--;
-								this.holdingPlayer.hasMoronicStrength = true;
+								this.holdingPlayer.hasMoronicRage = true;
 							}
 							break;
 						case 5:
@@ -516,6 +538,74 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		tghBonus: 0,
 		mBonus: 0,
 		legendary: false,
+		special: false,
+	},
+	/// ACTIVATED FLAVOR ITEMS
+	{
+		name: 'Powered Death Locket',
+		flavorText:
+			"After feasting on the blood of an enemy, the locket's eyes glow with murderous intent. You feel it sharing some of its strength with you.",
+		strBonus: 1,
+		spdBonus: 0,
+		tghBonus: 1,
+		mBonus: 0,
+		legendary: false,
+		special: true,
+	},
+	{
+		name: 'Activated Shadow Ankh',
+		flavorText:
+			'After dying and being brought back, you feel strangely in tune with the shadows. You can slip around much more easily.',
+		strBonus: 0,
+		spdBonus: 1,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+		special: true,
+	},
+	{
+		name: 'Rainbow Emblem',
+		flavorText:
+			'The rockmite has cut the gem into an emblem. It radiates with a loving warmth. You feel at ease while holding it.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+		special: true,
+	},
+	{
+		name: 'Empty Insignia',
+		flavorText:
+			'The rockmite has cut the gem into an insignia. It feels lighter than air. Wearing it, YOU feel lighter than air.',
+		strBonus: 1,
+		spdBonus: 1,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: false,
+		special: true,
+	},
+	{
+		name: 'Split Pendant',
+		flavorText:
+			'The rockmite has cut the gem into a pendant. It radiates warmth from one side and cold from the other, keeping you a perfectly comfortable temperature. Wearing it, you get the sense that the environment will no longer pose a threat to you.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 1,
+		mBonus: 0,
+		legendary: false,
+		special: true,
+	},
+	{
+		name: 'Twitchy Eye',
+		flavorText:
+			'You realize now the eye is actually a camera, streaming your reaction to a now-massive audience of adoring fans. As long as you continue streaming with this you will receive many donations.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 2,
+		legendary: false,
+		special: true,
 	},
 	/// LEGENDARY ITEMS ///
 ];
