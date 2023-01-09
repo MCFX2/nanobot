@@ -531,12 +531,13 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		},
 	},
 	{
-		name: 'Brass Knuckles',
-		flavorText: 'Pretty much an exoskeleton for your fist.',
-		strBonus: 1,
-		spdBonus: 0,
-		tghBonus: 0,
-		mBonus: 0,
+		name: 'Hilarious Sponsorship Deal',
+		flavorText:
+			'By taking this deal, you agree to implant a device that will randomly shock you in return for adoring fans and some good money.',
+		strBonus: -1,
+		spdBonus: -1,
+		tghBonus: -1,
+		mBonus: 3,
 		legendary: false,
 		special: false,
 	},
@@ -608,4 +609,48 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		special: true,
 	},
 	/// LEGENDARY ITEMS ///
+	{
+		name: 'Pendant of Anger',
+		flavorText:
+			"A legendary pendant that radiates with pure hatred. Of what, you're not sure. Wearing it makes you want to punch things with reckless abandon.",
+		strBonus: 2,
+		spdBonus: 0,
+		tghBonus: -1,
+		mBonus: 0,
+		legendary: true,
+		special: false,
+	},
+	{
+		name: 'Portable Forcefield',
+		flavorText:
+			'A compact device that produces an incredibly tough outer shell around your body. It shields you from most harm, but limits your mobility heavily.',
+		strBonus: 0,
+		spdBonus: -2,
+		tghBonus: 4,
+		mBonus: 0,
+		legendary: true,
+		special: false,
+	},
+	{
+		name: 'Shoes of Uncontrollable Speed',
+		flavorText:
+			'A plain-looking pair of shoes that feel surprisingly warm to the touch. They grow ever-hotter with each passing day. They provide incredible mobility but are known for killing all of their past owners.',
+		strBonus: 0,
+		spdBonus: 4,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: true,
+		special: false,
+		onDayFinished() {
+			if (this.daysPassed) {
+				this.daysPassed++;
+			} else {
+				this.daysPassed = 1;
+			}
+
+			if (this.holdingPlayer && this.daysPassed > 1) {
+				this.holdingPlayer.curHP -= this.daysPassed - 1;
+			}
+		},
+	},
 ];
