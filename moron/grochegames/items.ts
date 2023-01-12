@@ -1,5 +1,16 @@
 import { GrocheGamesItem } from './core';
 
+export const InvalidItem: GrocheGamesItem = {
+	name: '##INVALID##',
+	flavorText: "Woops! That isn't supposed to be there.",
+	strBonus: 0,
+	spdBonus: 0,
+	tghBonus: 0,
+	mBonus: 0,
+	legendary: true,
+	special: true,
+};
+
 export const AllGrocheGamesItems: GrocheGamesItem[] = [
 	/// FLAVOR ITEMS ///
 	{

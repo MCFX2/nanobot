@@ -1,4 +1,5 @@
 import { readCacheFileAsJson, writeCacheFile } from '../util';
+import { AllGrocheGamesItems, InvalidItem } from './items';
 
 export interface GrocheGamesItem {
 	[x: string]: any; // allow items to declare additional properties
@@ -38,6 +39,8 @@ export interface GrocheGamesItem {
 
 export class GrocheGamesCombatant {
 	team: string = '';
+	// channel ID
+	teamId: string = '';
 
 	name: string = 'unnamed';
 	pronounHe: string = 'he';
@@ -119,16 +122,36 @@ export class GrocheGamesCombatant {
 
 const combatantsFile = 'grochegames-combatants.json';
 class GrocheGamesCore {
+	// undefined is used here as a signal value to indicate we haven't initialized from file yet
 	private grocheCombatants?: GrocheGamesCombatant[] = undefined;
 
-	public get combatants(): GrocheGamesCombatant[] | undefined {
+	public get combatants(): GrocheGamesCombatant[] {
 		if (this.grocheCombatants === undefined) {
 			this.grocheCombatants = readCacheFileAsJson(combatantsFile);
+			// reading JSON failed, default to empty array
+			if (this.grocheCombatants === undefined) {
+				this.grocheCombatants = [];
+			} else {
+				this.refreshInventories();
+			}
 		}
 		return this.grocheCombatants;
 	}
 
-	public set combatants(list: GrocheGamesCombatant[] | undefined) {
+	// since inventory data doesn't include callbacks
+	// call this to refresh the inventory with the items found in AllGrocheGamesItems
+	private refreshInventories() {
+		this.grocheCombatants?.forEach(combatant => {
+			combatant.inventory = combatant.inventory.map(
+				storedItem =>
+					AllGrocheGamesItems.find(
+						trueItem => trueItem.name === storedItem.name,
+					) ?? InvalidItem, // InvalidItem should only be possible when an item in the master list is removed or renamed mid-game
+			);
+		});
+	}
+
+	public set combatants(list: GrocheGamesCombatant[]) {
 		this.grocheCombatants = list;
 
 		if (this.grocheCombatants) {
