@@ -1,7 +1,4 @@
-export interface GrocheGamesTeam {
-	id: number;
-	name: string;
-}
+import { readCacheFileAsJson, writeCacheFile } from '../util';
 
 export interface GrocheGamesItem {
 	[x: string]: any; // allow items to declare additional properties
@@ -40,13 +37,15 @@ export interface GrocheGamesItem {
 }
 
 export class GrocheGamesCombatant {
-	team: number = 0;
+	team: string = '';
 
 	name: string = 'unnamed';
 	pronounHe: string = 'he';
 	pronounHim: string = 'him';
+	isBot: boolean = false;
 	picUrl: string = '';
 	picDeadUrl: string = '';
+	deathQuote: string = '';
 
 	maxHP: number = 0;
 	curHP: number = 0;
@@ -117,3 +116,30 @@ export class GrocheGamesCombatant {
 		return disadvantage;
 	}
 }
+
+const combatantsFile = 'grochegames-combatants.json';
+class GrocheGamesCore {
+	private grocheCombatants?: GrocheGamesCombatant[] = undefined;
+
+	public get combatants(): GrocheGamesCombatant[] | undefined {
+		if (this.grocheCombatants === undefined) {
+			this.grocheCombatants = readCacheFileAsJson(combatantsFile);
+		}
+		return this.grocheCombatants;
+	}
+
+	public set combatants(list: GrocheGamesCombatant[] | undefined) {
+		this.grocheCombatants = list;
+
+		if (this.grocheCombatants) {
+			writeCacheFile(
+				combatantsFile,
+				Buffer.from(JSON.stringify(this.grocheCombatants, null, 1)),
+			);
+		} else {
+			writeCacheFile(combatantsFile, Buffer.from(''));
+		}
+	}
+}
+
+export let grocheGamesCore: GrocheGamesCore = new GrocheGamesCore();

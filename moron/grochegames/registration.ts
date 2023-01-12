@@ -2,7 +2,6 @@ import {
 	ActionRowBuilder,
 	ChatInputCommandInteraction,
 	Client,
-	ComponentBuilder,
 	Interaction,
 	ModalBuilder,
 	ModalSubmitInteraction,
@@ -33,14 +32,20 @@ async function onInit(discordClient: Client) {
 function onInteract(interaction: Interaction): boolean {
 	// filter by interaction type
 	if (interaction.isModalSubmit()) {
+		logger.log(interaction.customId);
 		// filter to our module
 		if (interaction.customId.startsWith('grochegames-')) {
 			const filteredId = interaction.customId.substring(
 				'grochegames-'.length,
 				interaction.customId.length,
 			);
-			if (filteredId.startsWith('npcwizard')) {
-				setNpcRegistration(interaction);
+			if (filteredId.startsWith('wizard')) {
+				if (filteredId.endsWith('-npc')) {
+					setNpcRegistration(interaction);
+				}
+				setPlayerRegistration(interaction);
+
+				// todo: set up part 2 of registration
 			}
 			return true;
 		}
@@ -48,6 +53,8 @@ function onInteract(interaction: Interaction): boolean {
 	}
 	return false;
 }
+
+function setPlayerRegistration(interaction: ModalSubmitInteraction) {}
 
 function setNpcRegistration(interaction: ModalSubmitInteraction) {
 	const npcName = interaction.fields.getTextInputValue('npcname');
@@ -58,55 +65,69 @@ function setNpcRegistration(interaction: ModalSubmitInteraction) {
 		.getTextInputValue('npcpronounhim')
 		.toLowerCase();
 
-	interaction.reply({
-		content:
-			'omg i love ' +
-			npcName +
-			' so much i wish ' +
-			npcHePronoun +
-			' would step on me while laughing to ' +
-			npcHimPronoun +
-			'self uwu',
-	});
+	const npcDeathQuote = interaction.fields.getTextInputValue('npcdeathquote');
+
+	const user = interaction.user;
+
+	// todo: store this info
 }
 
 export function registerTeamCommand(interaction: ChatInputCommandInteraction) {
 	logger.log('registering user in channel ' + interaction.channelId);
 
+	// todo: determine whether user is registering NPC + themselves or just themselves
+
+	const hasNPCAlly = true;
+
 	const wizard = new ModalBuilder()
-		.setCustomId('grochegames-npcwizard')
+		.setCustomId('grochegames-wizard' + (hasNPCAlly ? '-npc' : ''))
 		.setTitle('Team Registration Form');
 
-	const npcNameInput = new TextInputBuilder()
-		.setCustomId('npcname')
-		.setLabel('Name of your NPC ally')
-		.setRequired(true)
-		.setStyle(TextInputStyle.Short);
+	let wizardItems: ActionRowBuilder<TextInputBuilder>[] = [];
 
-	const npcHePronoun = new TextInputBuilder()
-		.setCustomId('npcpronounhe')
-		.setLabel('First pronoun of your NPC ally')
-		.setValue('he')
-		.setRequired(true)
-		.setStyle(TextInputStyle.Short);
+	if (hasNPCAlly) {
+		wizardItems.push(
+			new ActionRowBuilder<TextInputBuilder>().addComponents(
+				new TextInputBuilder()
+					.setCustomId('npcname')
+					.setLabel('Name of your NPC ally')
+					.setRequired(true)
+					.setStyle(TextInputStyle.Short),
+			),
+		);
+		wizardItems.push(
+			new ActionRowBuilder<TextInputBuilder>().addComponents(
+				new TextInputBuilder()
+					.setCustomId('npcpronounhe')
+					.setLabel('First pronoun of your NPC ally')
+					.setValue('he')
+					.setRequired(true)
+					.setStyle(TextInputStyle.Short),
+			),
+		);
+		wizardItems.push(
+			new ActionRowBuilder<TextInputBuilder>().addComponents(
+				new TextInputBuilder()
+					.setCustomId('npcpronounhim')
+					.setLabel('Second pronoun of your NPC ally')
+					.setValue('him')
+					.setRequired(true)
+					.setStyle(TextInputStyle.Short),
+			),
+		);
+		wizardItems.push(
+			new ActionRowBuilder<TextInputBuilder>().addComponents(
+				new TextInputBuilder()
+					.setCustomId('npcdeathquote')
+					.setLabel('Dying quote')
+					.setRequired(false)
+					.setMaxLength(500)
+					.setStyle(TextInputStyle.Paragraph),
+			),
+		);
+	}
 
-	const npcHimPronoun = new TextInputBuilder()
-		.setCustomId('npcpronounhim')
-		.setLabel('Second pronoun of your NPC ally')
-		.setValue('him')
-		.setRequired(true)
-		.setStyle(TextInputStyle.Short);
-
-	const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
-		npcNameInput,
-	);
-	const secondActionRow =
-		new ActionRowBuilder<TextInputBuilder>().addComponents(npcHePronoun);
-	const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
-		npcHimPronoun,
-	);
-
-	wizard.setComponents(firstActionRow, secondActionRow, thirdActionRow);
+	wizard.setComponents(wizardItems);
 
 	interaction.showModal(wizard);
 }
