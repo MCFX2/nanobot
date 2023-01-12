@@ -2,7 +2,9 @@ import {
 	ActionRowBuilder,
 	ChatInputCommandInteraction,
 	Client,
+	EmbedBuilder,
 	Interaction,
+	Message,
 	ModalBuilder,
 	ModalSubmitInteraction,
 	TextInputBuilder,
@@ -11,7 +13,6 @@ import {
 import { Logger, WarningLevel } from '../logger';
 import { MoronModule } from '../moronmodule';
 import { GrocheGamesCombatant, grocheGamesCore } from './core';
-import { AllGrocheGamesItems } from './items';
 
 let client: Client;
 
@@ -24,11 +25,84 @@ export const GrocheGamesRegistration: MoronModule = {
 	name: 'grochegames/registration',
 	onInit: onInit,
 	onInteract: onInteract,
+	onMessageSend: onMessageSend,
 };
 
 async function onInit(discordClient: Client) {
 	client = discordClient;
 	logger.log('initialized');
+}
+
+function getImageAttachment(message: Message): string {
+	if (message.attachments.size < 1) {
+		message.reply(
+			"Sorry, you must attach an image directly. Links won't work.",
+		);
+		return '';
+	} else if (message.attachments.size > 1) {
+		message.reply('Sorry, you must send exactly one image.');
+		return '';
+	}
+
+	const attachUrl = message.attachments.first()!.url;
+	if (!attachUrl.endsWith('.jpg') && !attachUrl.endsWith('.png')) {
+		message.reply(
+			"Sorry, I don't recognize that kind of file. It has to be a PNG or JPG image.",
+		);
+		return '';
+	}
+	return attachUrl;
+}
+
+async function onMessageSend(message: Message) {
+	// determine whether user has a bot ally with missing profile pic
+	const channelId = message.channelId;
+
+	const combatants = grocheGamesCore.combatants;
+
+	const botAlly = combatants.findIndex(
+		fighter => fighter.teamId === channelId && fighter.isBot,
+	);
+
+	if (botAlly !== -1) {
+		if (combatants[botAlly].picUrl === '') {
+			// if we are here, we are currently prompting user for profile pic (bot user exists but no pfp set)
+
+			// check for attachments
+			const attachUrl = getImageAttachment(message);
+			if (attachUrl !== '') {
+				combatants[botAlly].picUrl = attachUrl;
+				grocheGamesCore.combatants = combatants;
+				await message.reply({
+					content:
+						"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+					embeds: [new EmbedBuilder().setImage(attachUrl)],
+				});
+				message.reply({
+					content:
+						"Next, please upload a **dead version**. I know I said this was optional earlier, but I lied. Reuse the same image from before if you're lazy.",
+				});
+			}
+		} else if (combatants[botAlly].picDeadUrl === '') {
+			// prompting user for dead profile pic
+			const attachUrl = getImageAttachment(message);
+			if (attachUrl !== '') {
+				combatants[botAlly].picDeadUrl = attachUrl;
+				grocheGamesCore.combatants = combatants;
+				await message.reply({
+					content:
+						"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+					embeds: [new EmbedBuilder().setImage(attachUrl)],
+				});
+				message.reply({
+					content:
+						'Your NPC ally is all set up! Please run /register once more to set up your profile.',
+				});
+			}
+		}
+	}
+
+	//
 }
 
 function onInteract(interaction: Interaction): boolean {
@@ -89,7 +163,7 @@ function setBaseRegistration(
 
 		interaction.reply({
 			content:
-				"You've successfully registered an NPC ally. Please run /register again to set up yourself.\n\nYou just registered **" +
+				"You've successfully registered an NPC ally. Next, **please upload a photo you would like to use for the bot.** It must be uploaded to this channel, it cannot be a link.\n\nYou just registered **" +
 				npcName +
 				'**. ' +
 				npcHePronoun +
