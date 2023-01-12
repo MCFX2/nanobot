@@ -21,7 +21,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 0,
 		mBonus: 0,
-		legendary: false,
+		legendary: true,
 		special: false,
 
 		onKill() {
@@ -48,7 +48,7 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		spdBonus: 0,
 		tghBonus: 0,
 		mBonus: 0,
-		legendary: false,
+		legendary: true,
 		special: false,
 
 		onDie() {
@@ -436,6 +436,125 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 		legendary: false,
 	},
 	{
+		name: 'Machete',
+		flavorText: 'Sharp and heavy. Dangerous combination.',
+		strBonus: 1,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Razor Disc',
+		flavorText:
+			"Dangerous toys are fun but you might get hurt. Very cool weapon but there's really nowhere good to hold it.",
+		strBonus: 2,
+		spdBonus: 0,
+		tghBonus: -1,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Nail Guards',
+		flavorText:
+			"These nifty finger attachments ensure you'll never get a hangnail again.",
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 1,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Clown Shoes of +20% Speed',
+		flavorText:
+			'It\'s not certain that these actually give you "+20% speed", but you definitely feel faster in them. You look ridiculous in these, and it\'s harder to get close to enemies.',
+		strBonus: -1,
+		spdBonus: 2,
+		tghBonus: 0,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Cat Ears',
+		flavorText: 'If you want to sell your dignity for money, look no further.',
+		strBonus: -1,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 2,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Very Revealing Armor',
+		flavorText:
+			'These somehow offer even worse protection than your regular clothes, but they do make you look pretty hot.',
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: -1,
+		mBonus: 2,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Copper Knuckles',
+		flavorText:
+			"These aren't as strong as brass, but they have some useful disinfectant properties.",
+		strBonus: 0,
+		spdBonus: 0,
+		tghBonus: 1,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Paper Knuckles',
+		flavorText:
+			"These offer no additional toughness whatsoever, but they make your fists extremely aerodynamic. Speed bonus if you don't mind holding your fists in front of you as you run.",
+		strBonus: 0,
+		spdBonus: 1,
+		tghBonus: 0,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Glock-23',
+		flavorText:
+			"They finally improved on the original. Doesn't have any bullets though.",
+		strBonus: 1,
+		spdBonus: 0,
+		tghBonus: 0,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Ninja Star',
+		flavorText:
+			"It's not made of ninjas unfortunately, nor does it produce ninjas. It does make hurting yourself very easy though.",
+		strBonus: 1,
+		spdBonus: 1,
+		tghBonus: -1,
+		mBonus: 0,
+		special: false,
+		legendary: false,
+	},
+	{
+		name: 'Mukbang Kit',
+		flavorText:
+			'This is disgusting. You really gonna eat all this? Well, it does bring in an audience...',
+		strBonus: 0,
+		spdBonus: -3,
+		tghBonus: 2,
+		mBonus: 2,
+		special: false,
+		legendary: false,
+	},
+	{
 		name: 'Mil-spec Vest',
 		flavorText: 'Sturdy, yet light. Might just save your life.',
 		strBonus: 0,
@@ -468,7 +587,8 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 	},
 	{
 		name: 'Medpack',
-		flavorText: 'Dubious quality, but way better than nothing.',
+		flavorText:
+			'Dubious quality, but way better than nothing. [Discard to use]',
 		strBonus: 0,
 		spdBonus: 0,
 		tghBonus: 0,
@@ -663,5 +783,16 @@ export const AllGrocheGamesItems: GrocheGamesItem[] = [
 				this.holdingPlayer.curHP -= this.daysPassed - 1;
 			}
 		},
+	},
+	{
+		name: 'Bag of Holding',
+		flavorText:
+			'This offers unmatched storage, but unmatched weight. I guess you could smack someone with it. That would hurt. If you could hit them.',
+		strBonus: 5,
+		spdBonus: -4,
+		tghBonus: 0,
+		mBonus: 0,
+		legendary: true,
+		special: false,
 	},
 ];

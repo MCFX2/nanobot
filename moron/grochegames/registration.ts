@@ -54,6 +54,134 @@ function getImageAttachment(message: Message): string {
 	return attachUrl;
 }
 
+interface GrocheGamesBackground {
+	name: string;
+	desc: string;
+	buff?: string;
+	buffDesc?: string;
+	curse?: string;
+	curseDesc?: string;
+
+	hp: number;
+	money: number;
+	strength: number;
+	speed: number;
+	toughness: number;
+}
+
+const backgrounds: GrocheGamesBackground[] = [
+	{
+		name: 'Miner',
+		desc: "You used to spend all day hauling coal and other metals out of the mines. You're incredibly tough, but the occupational hazard has left you damaged and poor.",
+
+		hp: 3,
+		money: 1,
+		strength: 5,
+		speed: 2,
+		toughness: 4,
+	},
+	{
+		name: 'Highschool Track Star',
+		desc: 'Growing up in a wealthy family, all you ever needed to worry about was winning at the next meet.',
+
+		hp: 3,
+		money: 3,
+		strength: 3,
+		speed: 4,
+		toughness: 2,
+	},
+	{
+		name: 'Labrat',
+		desc: "You were subject to numerous government experiments. You've gained some incredible physical abilities, but the experiments took as much as they gave",
+
+		hp: 7,
+		money: 0,
+		strength: 1,
+		speed: 3,
+		toughness: 5,
+	},
+	{
+		name: 'Mailman',
+		desc: "You used to move packages for a living. Now you're hoping for an expedited victory.",
+
+		buff: 'Deliverance',
+		buffDesc: 'Start the game with a completely random item.',
+
+		hp: 4,
+		money: 1,
+		strength: 4,
+		speed: 3,
+		toughness: 1,
+	},
+	{
+		name: 'Unfortunate Toddler',
+		desc: 'What are you doing in the hunger games??? Get this kid out of here! Might not actually be a toddler but sure looks like one.',
+
+		buff: "Can't show that on TV",
+		buffDesc:
+			'Do EVERYTHING with advantage (all RNG effects happen an extra time and take the best result).',
+
+		hp: 3,
+		money: 4,
+		strength: 1,
+		speed: 2,
+		toughness: 1,
+	},
+	{
+		name: 'Bear Grylls Apostle',
+		desc: 'You have turned survivalism into a religion. Your Australian accent could use some work though.',
+
+		buff: 'Multitool',
+		buffDesc: 'Receive no passive stat penalties from items.',
+
+		hp: 5,
+		money: 0,
+		strength: 3,
+		speed: 1,
+		toughness: 4,
+	},
+	{
+		name: 'Glitchy Supersoldier',
+		desc: "You're an elite master of everything, but there seem to have been some issues in your software...",
+
+		curse: 'Short-circuit',
+		curseDesc: 'Occasionally lose stats, permanently.',
+
+		hp: 4,
+		money: 1,
+		strength: 4,
+		speed: 4,
+		toughness: 4,
+	},
+	{
+		name: 'God Gamer',
+		desc: "You're as strong as it gets, but you prefer life on its hardest difficulty.",
+
+		curse: 'Life on Expert Mode',
+		curseDesc:
+			'Do EVERYTHING with disadvantage (all RNG effects happen an extra time and take the worst result).',
+
+		hp: 7,
+		money: 0,
+		strength: 5,
+		speed: 5,
+		toughness: 5,
+	},
+	{
+		name: 'Buffoon',
+		desc: "Nobody knows how you survived this long. You're remarkably stupid, but very physically able.",
+
+		curse: 'Moronic Abuse',
+		curseDesc: 'Receive double passive stat penalties from items.',
+
+		hp: 6,
+		money: 1,
+		strength: 5,
+		speed: 2,
+		toughness: 3,
+	},
+];
+
 async function onMessageSend(message: Message) {
 	// determine whether user has a bot ally with missing profile pic
 	const channelId = message.channelId;
@@ -96,7 +224,10 @@ async function onMessageSend(message: Message) {
 				});
 				message.reply({
 					content:
-						'Your NPC ally is all set up! Please run /register once more to set up your profile.',
+						"You're almost done! Please pick a background for " +
+						combatants[botAlly].name +
+						'.\n\nThe available backgrounds are as follows:\nMiner: You used to spend all day hauling coal and other metals out of the mines.' +
+						"You're incredibly tough, but the occupational hazard has left you damaged and poor.\nHP: 3, Money: +1, Strength: +5, Speed: +2, Toughness: +4",
 				});
 			}
 		}
