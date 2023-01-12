@@ -1,7 +1,11 @@
 import {
 	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonInteraction,
+	ButtonStyle,
 	ChatInputCommandInteraction,
 	Client,
+	ComponentBuilder,
 	EmbedBuilder,
 	Interaction,
 	Message,
@@ -189,7 +193,7 @@ async function onMessageSend(message: Message) {
 	const combatants = grocheGamesCore.combatants;
 
 	const botAlly = combatants.findIndex(
-		fighter => fighter.teamId === channelId && fighter.isBot,
+		fighter => fighter.teamId === channelId && fighter.id === '',
 	);
 
 	if (botAlly !== -1) {
@@ -222,18 +226,150 @@ async function onMessageSend(message: Message) {
 						"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
 					embeds: [new EmbedBuilder().setImage(attachUrl)],
 				});
-				message.reply({
+				await message.reply({
 					content:
 						"You're almost done! Please pick a background for " +
 						combatants[botAlly].name +
-						'.\n\nThe available backgrounds are as follows:\nMiner: You used to spend all day hauling coal and other metals out of the mines.' +
-						"You're incredibly tough, but the occupational hazard has left you damaged and poor.\nHP: 3, Money: +1, Strength: +5, Speed: +2, Toughness: +4",
+						'.',
+				});
+
+				// roll three random backgrounds
+				const backgroundChoices: number[] = [];
+				while (backgroundChoices.length < 3) {
+					const randomChoice = Math.floor(Math.random() * 9);
+					if (!backgroundChoices.includes(randomChoice)) {
+						backgroundChoices.push(randomChoice);
+					}
+				}
+
+				backgroundChoices.forEach(async choice => {
+					const bg = backgrounds[choice];
+					const msg = await message.channel.send({
+						content:
+							'Background: **' +
+							bg.name +
+							'**\n\n' +
+							bg.desc +
+							'\n\n' +
+							(bg.buff
+								? bg.buff + ': ' + bg.buffDesc + '\n\n'
+								: bg.curse
+								? bg.curse + ': ' + bg.curseDesc + '\n\n'
+								: '') +
+							'HP: +' +
+							bg.hp +
+							' / Money: +' +
+							bg.money +
+							' / STR: +' +
+							bg.strength +
+							' / SPD: +' +
+							bg.speed +
+							' / TGH: +' +
+							bg.toughness,
+						components: [
+							new ActionRowBuilder<ButtonBuilder>().addComponents(
+								new ButtonBuilder()
+									.setCustomId('grochegames-setbackground-npc-' + bg.name)
+									.setStyle(ButtonStyle.Primary)
+									.setLabel('Take this background'),
+							),
+						],
+					});
+
+					// todo: cache msg.id by group so when picking one background they all get deleted
 				});
 			}
 		}
 	}
 
 	//
+}
+
+function setBackground(
+	interaction: ButtonInteraction,
+	isNPC: boolean,
+	backgroundChosen: string,
+) {
+	if (isNPC) {
+		logger.log(backgroundChosen);
+		const background = backgrounds.find(bg => bg.name === backgroundChosen);
+		if (background) {
+			// get NPC
+			const combatants = grocheGamesCore.combatants;
+
+			const fIdx = combatants.findIndex(
+				fighter => fighter.teamId === interaction.channelId,
+			);
+
+			if (fIdx === -1) {
+				interaction.reply(
+					'the bot you are configuring stopped existing somehow. sorry',
+				);
+			} else {
+				combatants[fIdx].baseMoney = background.money;
+				combatants[fIdx].baseStrength = background.strength;
+				combatants[fIdx].baseSpeed = background.speed;
+				combatants[fIdx].baseToughness = background.toughness;
+				combatants[fIdx].maxHP = background.hp;
+				combatants[fIdx].curHP = background.hp;
+
+				// setting the buffs/debuffs is a bit more annoying (read: hacky)
+				if (background.buff) {
+					if (background.buff === 'Deliverance') {
+						combatants[fIdx].hasDeliverance = true;
+					} else if (background.buff === "Can't show that on TV") {
+						combatants[fIdx].hasLuck = true;
+					} else if (background.buff === 'Multitool') {
+						combatants[fIdx].hasInventive = true;
+					} else {
+						interaction.reply(
+							'sorry, the buff (' +
+								background.buff +
+								') on that background is broken. Bug MCFX2 to fix this.',
+						);
+					}
+				} else if (background.curse) {
+					if (background.curse === 'Short-circuit') {
+						combatants[fIdx].hasShortCircuit = true;
+					} else if (background.curse === 'Life on Expert Mode') {
+						combatants[fIdx].hasExpertMode = true;
+					} else if (background.curse === 'Moronic Abuse') {
+						combatants[fIdx].hasMoronicRage = true;
+					} else {
+						interaction.reply(
+							'sorry, the curse (' +
+								background.buff +
+								') on that background is broken. Bug MCFX2 to fix this.',
+						);
+					}
+				}
+
+				interaction.reply({
+					embeds: [
+						new EmbedBuilder()
+							.setTitle(combatants[fIdx].name + ' the ' + background.name)
+							.setURL('https://google.com/')
+							.setDescription(combatants[fIdx].deathQuote)
+							.setImage(combatants[fIdx].picUrl),
+						new EmbedBuilder()
+							.setTitle(combatants[fIdx].name + ' the ' + background.name)
+							.setURL('https://google.com/')
+							.setImage(combatants[fIdx].picDeadUrl),
+					],
+				});
+
+				combatants[fIdx].registrationComplete = true;
+			}
+
+			grocheGamesCore.combatants = combatants;
+		} else {
+			interaction.reply(
+				'sorry, something fucked up. idk what a ' + backgroundChosen + ' is',
+			);
+		}
+	}
+
+	interaction.message.delete();
 }
 
 function onInteract(interaction: Interaction): boolean {
@@ -246,14 +382,31 @@ function onInteract(interaction: Interaction): boolean {
 				'grochegames-'.length,
 				interaction.customId.length,
 			);
+
+			// figure out what kind of modal we're handling
 			if (filteredId.startsWith('wizard')) {
 				if (filteredId.endsWith('-npc')) {
 					setBaseRegistration(interaction, true);
 				} else {
 					setBaseRegistration(interaction, false);
 				}
+			}
+			return true;
+		}
+		return false;
+	} else if (interaction.isButton()) {
+		logger.log(interaction.customId);
+		if (interaction.customId.startsWith('grochegames-')) {
+			const filteredId = interaction.customId.substring(
+				'grochegames-'.length,
+				interaction.customId.length,
+			);
 
-				// todo: set up part 2 of registration
+			// figure out what kind of button we're handling
+			if (filteredId.startsWith('setbackground-')) {
+				const tokens = filteredId.split('-');
+				const npc = tokens[1] === 'npc';
+				setBackground(interaction, npc, tokens[npc ? 2 : 1]);
 			}
 			return true;
 		}
@@ -286,7 +439,6 @@ function setBaseRegistration(
 		npcFighter.pronounHim = npcHimPronoun;
 		npcFighter.deathQuote = npcDeathQuote;
 		npcFighter.teamId = interaction.channelId ?? '';
-		npcFighter.isBot = true;
 
 		combatants.push(npcFighter);
 
@@ -324,7 +476,7 @@ function setBaseRegistration(
 		fighter.pronounHim = himPronoun;
 		fighter.deathQuote = deathQuote;
 		fighter.teamId = interaction.channelId ?? '';
-		fighter.isBot = true;
+		fighter.id = interaction.user.id;
 
 		combatants.push(fighter);
 	}

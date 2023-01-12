@@ -42,10 +42,15 @@ export class GrocheGamesCombatant {
 	// channel ID
 	teamId: string = '';
 
+	registrationComplete: boolean = false;
+	// not the most elegant solution but the easiest
+	backgroundMsgIds: string[] = [];
+
 	name: string = 'unnamed';
 	pronounHe: string = 'he';
 	pronounHim: string = 'him';
-	isBot: boolean = false;
+	// empty for bots, otherwise it's the discord user ID
+	id: string = '';
 	picUrl: string = '';
 	picDeadUrl: string = '';
 	deathQuote: string = '';
