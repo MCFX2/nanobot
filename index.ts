@@ -20,6 +20,7 @@ import { MoronModule } from './moron/moronmodule';
 import { TwitFollow } from './moron/feeds/twitfollow';
 import { TwitFix } from './moron/twitfix';
 import { GrocheGamesRegistration } from './moron/grochegames/registration';
+import { Error } from './moron/util';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -187,7 +188,7 @@ client.on('interactionCreate', async interaction => {
 					'exception thrown handling interaction in module ' + mod.name,
 					WarningLevel.Error,
 				);
-				logger.log(err, WarningLevel.Error);
+				logger.log(JSON.stringify(err), WarningLevel.Error);
 				return false;
 			}
 		});

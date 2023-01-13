@@ -186,14 +186,116 @@ const backgrounds: GrocheGamesBackground[] = [
 	},
 ];
 
-async function onMessageSend(message: Message) {
-	// determine whether user has a bot ally with missing profile pic
-	const channelId = message.channelId;
-
+async function backgroundSelection(
+	message: Message,
+	isNPC: boolean,
+	combatantIdx: number,
+) {
 	const combatants = grocheGamesCore.combatants;
 
+	await message.reply({
+		content: "You're almost done! Please pick a background for yourself.",
+	});
+
+	// roll three random backgrounds
+	const backgroundChoices: number[] = [];
+	while (backgroundChoices.length < 3) {
+		const randomChoice = Math.floor(Math.random() * backgrounds.length);
+		if (!backgroundChoices.includes(randomChoice)) {
+			backgroundChoices.push(randomChoice);
+		}
+	}
+
+	backgroundChoices.forEach(async choice => {
+		const bg = backgrounds[choice];
+		const msg = await message.channel.send({
+			content:
+				'Background: **' +
+				bg.name +
+				'**\n\n' +
+				bg.desc +
+				'\n\n' +
+				(bg.buff
+					? bg.buff + ': ' + bg.buffDesc + '\n\n'
+					: bg.curse
+					? bg.curse + ': ' + bg.curseDesc + '\n\n'
+					: '') +
+				'HP: +' +
+				bg.hp +
+				' / Money: +' +
+				bg.money +
+				' / STR: +' +
+				bg.strength +
+				' / SPD: +' +
+				bg.speed +
+				' / TGH: +' +
+				bg.toughness,
+			components: [
+				new ActionRowBuilder<ButtonBuilder>().addComponents(
+					new ButtonBuilder()
+						.setCustomId(
+							'grochegames-setbackground-' + (isNPC ? 'npc-' : '') + bg.name,
+						)
+						.setStyle(ButtonStyle.Primary)
+						.setLabel('Take this background'),
+				),
+			],
+		});
+
+		combatants[combatantIdx].backgroundMsgIds.push(msg.id);
+	});
+
+	grocheGamesCore.combatants = combatants;
+}
+
+async function onMessageSend(message: Message) {
+	const combatants = grocheGamesCore.combatants;
+
+	// determine whether user is missing profile pic
+	const user = combatants.findIndex(
+		fighter => fighter.id === message.author.id,
+	);
+
+	if (user !== -1) {
+		if (combatants[user].picUrl === '') {
+			const attachUrl = getImageAttachment(message);
+
+			if (attachUrl !== '') {
+				combatants[user].picUrl = attachUrl;
+				combatants[user].backgroundMsgIds.push(
+					(
+						await message.reply({
+							content:
+								"I've successfully set your image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+							embeds: [new EmbedBuilder().setImage(attachUrl)],
+						})
+					).id,
+				);
+				grocheGamesCore.combatants = combatants;
+			}
+		} else if (combatants[user].picDeadUrl === '') {
+			const attachUrl = getImageAttachment(message);
+			if (attachUrl !== '') {
+				combatants[user].picDeadUrl = attachUrl;
+				combatants[user].backgroundMsgIds.push(
+					(
+						await message.reply({
+							content:
+								"I've successfully set your image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+							embeds: [new EmbedBuilder().setImage(attachUrl)],
+						})
+					).id,
+				);
+				grocheGamesCore.combatants = combatants;
+
+				backgroundSelection(message, false, user);
+			}
+		}
+	}
+
+	// determine whether user has a bot ally with missing profile pic
 	const botAlly = combatants.findIndex(
-		fighter => fighter.teamId === channelId && fighter.id === '',
+		fighter => fighter.teamId === message.channelId && fighter.id === '',
 	);
 
 	if (botAlly !== -1) {
@@ -204,80 +306,39 @@ async function onMessageSend(message: Message) {
 			const attachUrl = getImageAttachment(message);
 			if (attachUrl !== '') {
 				combatants[botAlly].picUrl = attachUrl;
-				grocheGamesCore.combatants = combatants;
-				await message.reply({
-					content:
-						"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
-					embeds: [new EmbedBuilder().setImage(attachUrl)],
-				});
+				combatants[botAlly].backgroundMsgIds.push(
+					(
+						await message.reply({
+							content:
+								"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+							embeds: [new EmbedBuilder().setImage(attachUrl)],
+						})
+					).id,
+				);
 				message.reply({
 					content:
 						"Next, please upload a **dead version**. I know I said this was optional earlier, but I lied. Reuse the same image from before if you're lazy.",
 				});
+
+				grocheGamesCore.combatants = combatants;
 			}
 		} else if (combatants[botAlly].picDeadUrl === '') {
 			// prompting user for dead profile pic
 			const attachUrl = getImageAttachment(message);
 			if (attachUrl !== '') {
 				combatants[botAlly].picDeadUrl = attachUrl;
+				combatants[botAlly].backgroundMsgIds.push(
+					(
+						await message.reply({
+							content:
+								"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+							embeds: [new EmbedBuilder().setImage(attachUrl)],
+						})
+					).id,
+				);
 				grocheGamesCore.combatants = combatants;
-				await message.reply({
-					content:
-						"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
-					embeds: [new EmbedBuilder().setImage(attachUrl)],
-				});
-				await message.reply({
-					content:
-						"You're almost done! Please pick a background for " +
-						combatants[botAlly].name +
-						'.',
-				});
 
-				// roll three random backgrounds
-				const backgroundChoices: number[] = [];
-				while (backgroundChoices.length < 3) {
-					const randomChoice = Math.floor(Math.random() * 9);
-					if (!backgroundChoices.includes(randomChoice)) {
-						backgroundChoices.push(randomChoice);
-					}
-				}
-
-				backgroundChoices.forEach(async choice => {
-					const bg = backgrounds[choice];
-					const msg = await message.channel.send({
-						content:
-							'Background: **' +
-							bg.name +
-							'**\n\n' +
-							bg.desc +
-							'\n\n' +
-							(bg.buff
-								? bg.buff + ': ' + bg.buffDesc + '\n\n'
-								: bg.curse
-								? bg.curse + ': ' + bg.curseDesc + '\n\n'
-								: '') +
-							'HP: +' +
-							bg.hp +
-							' / Money: +' +
-							bg.money +
-							' / STR: +' +
-							bg.strength +
-							' / SPD: +' +
-							bg.speed +
-							' / TGH: +' +
-							bg.toughness,
-						components: [
-							new ActionRowBuilder<ButtonBuilder>().addComponents(
-								new ButtonBuilder()
-									.setCustomId('grochegames-setbackground-npc-' + bg.name)
-									.setStyle(ButtonStyle.Primary)
-									.setLabel('Take this background'),
-							),
-						],
-					});
-
-					// todo: cache msg.id by group so when picking one background they all get deleted
-				});
+				backgroundSelection(message, true, botAlly);
 			}
 		}
 	}
@@ -290,86 +351,335 @@ function setBackground(
 	isNPC: boolean,
 	backgroundChosen: string,
 ) {
-	if (isNPC) {
-		logger.log(backgroundChosen);
-		const background = backgrounds.find(bg => bg.name === backgroundChosen);
-		if (background) {
-			// get NPC
-			const combatants = grocheGamesCore.combatants;
+	logger.log(backgroundChosen);
+	const background = backgrounds.find(bg => bg.name === backgroundChosen);
+	if (background) {
+		const combatants = grocheGamesCore.combatants;
 
-			const fIdx = combatants.findIndex(
-				fighter => fighter.teamId === interaction.channelId,
+		logger.log('is npc: ' + isNPC);
+		// get entry
+		const fIdx = combatants.findIndex(fighter =>
+			isNPC
+				? fighter.teamId === interaction.channelId && fighter.id === ''
+				: fighter.id === interaction.user.id,
+		);
+
+		logger.log('idx : ' + fIdx);
+
+		if (fIdx === -1) {
+			interaction.reply(
+				'the entry you are configuring stopped existing somehow. sorry',
 			);
+		} else {
+			combatants[fIdx].baseMoney = background.money;
+			combatants[fIdx].baseStrength = background.strength;
+			combatants[fIdx].baseSpeed = background.speed;
+			combatants[fIdx].baseToughness = background.toughness;
+			combatants[fIdx].maxHP = background.hp;
+			combatants[fIdx].curHP = background.hp;
 
-			if (fIdx === -1) {
-				interaction.reply(
-					'the bot you are configuring stopped existing somehow. sorry',
-				);
-			} else {
-				combatants[fIdx].baseMoney = background.money;
-				combatants[fIdx].baseStrength = background.strength;
-				combatants[fIdx].baseSpeed = background.speed;
-				combatants[fIdx].baseToughness = background.toughness;
-				combatants[fIdx].maxHP = background.hp;
-				combatants[fIdx].curHP = background.hp;
-
-				// setting the buffs/debuffs is a bit more annoying (read: hacky)
-				if (background.buff) {
-					if (background.buff === 'Deliverance') {
-						combatants[fIdx].hasDeliverance = true;
-					} else if (background.buff === "Can't show that on TV") {
-						combatants[fIdx].hasLuck = true;
-					} else if (background.buff === 'Multitool') {
-						combatants[fIdx].hasInventive = true;
-					} else {
-						interaction.reply(
-							'sorry, the buff (' +
-								background.buff +
-								') on that background is broken. Bug MCFX2 to fix this.',
-						);
-					}
-				} else if (background.curse) {
-					if (background.curse === 'Short-circuit') {
-						combatants[fIdx].hasShortCircuit = true;
-					} else if (background.curse === 'Life on Expert Mode') {
-						combatants[fIdx].hasExpertMode = true;
-					} else if (background.curse === 'Moronic Abuse') {
-						combatants[fIdx].hasMoronicRage = true;
-					} else {
-						interaction.reply(
-							'sorry, the curse (' +
-								background.buff +
-								') on that background is broken. Bug MCFX2 to fix this.',
-						);
-					}
+			// setting the buffs/debuffs is a bit more annoying (read: hacky)
+			if (background.buff) {
+				if (background.buff === 'Deliverance') {
+					combatants[fIdx].hasDeliverance = true;
+				} else if (background.buff === "Can't show that on TV") {
+					combatants[fIdx].hasLuck = true;
+				} else if (background.buff === 'Multitool') {
+					combatants[fIdx].hasInventive = true;
+				} else {
+					interaction.reply(
+						'sorry, the buff (' +
+							background.buff +
+							') on that background is broken. Bug MCFX2 to fix this.',
+					);
 				}
-
-				interaction.reply({
-					embeds: [
-						new EmbedBuilder()
-							.setTitle(combatants[fIdx].name + ' the ' + background.name)
-							.setURL('https://google.com/')
-							.setDescription(combatants[fIdx].deathQuote)
-							.setImage(combatants[fIdx].picUrl),
-						new EmbedBuilder()
-							.setTitle(combatants[fIdx].name + ' the ' + background.name)
-							.setURL('https://google.com/')
-							.setImage(combatants[fIdx].picDeadUrl),
-					],
-				});
-
-				combatants[fIdx].registrationComplete = true;
+			} else if (background.curse) {
+				if (background.curse === 'Short-circuit') {
+					combatants[fIdx].hasShortCircuit = true;
+				} else if (background.curse === 'Life on Expert Mode') {
+					combatants[fIdx].hasExpertMode = true;
+				} else if (background.curse === 'Moronic Abuse') {
+					combatants[fIdx].hasMoronicRage = true;
+				} else {
+					interaction.reply(
+						'sorry, the curse (' +
+							background.buff +
+							') on that background is broken. Bug MCFX2 to fix this.',
+					);
+				}
 			}
 
-			grocheGamesCore.combatants = combatants;
-		} else {
-			interaction.reply(
-				'sorry, something fucked up. idk what a ' + backgroundChosen + ' is',
+			interaction.reply({
+				embeds: [
+					new EmbedBuilder()
+						.setTitle(combatants[fIdx].name + ' the ' + background.name)
+						.setURL('https://google.com/')
+						.setDescription(
+							combatants[fIdx].deathQuote === ''
+								? null
+								: combatants[fIdx].deathQuote,
+						)
+						.setImage(combatants[fIdx].picUrl),
+					new EmbedBuilder()
+						.setTitle(combatants[fIdx].name + ' the ' + background.name)
+						.setURL('https://google.com/')
+						.setImage(combatants[fIdx].picDeadUrl),
+				],
+			});
+
+			interaction.channel?.send(
+				'There you go. You can review all the information above. If there are any mistakes you will need to have MCFX2 reset your registration for you.',
 			);
+
+			if (isNPC) {
+				interaction.channel?.send(
+					'Finally, **Please type /register again** to register yourself.',
+				);
+			} else {
+				interaction.channel?.send(
+					'And with that, you are registered. Your team name can be set with `/teamname` at any time prior to game start.',
+				);
+			}
+
+			combatants[fIdx].backgroundMsgIds.forEach(async msg => {
+				try {
+					(await interaction.channel?.messages.fetch(msg))?.delete();
+				} catch (e) {
+					// do nothing
+				}
+			});
+
+			combatants[fIdx].backgroundMsgIds = [];
+
+			combatants[fIdx].registrationComplete = true;
 		}
+
+		grocheGamesCore.combatants = combatants;
+	} else {
+		interaction.reply(
+			'sorry, something fucked up. idk what a ' + backgroundChosen + ' is',
+		);
+	}
+}
+
+function usePlayerProfilePicture(
+	interaction: ButtonInteraction,
+	targetId: string,
+) {
+	if (interaction.user.id !== targetId) {
+		logger.log(interaction.user.id + '|' + targetId);
+		interaction.reply("Hey. That's not for you.");
+		return;
 	}
 
-	interaction.message.delete();
+	const combatants = grocheGamesCore.combatants;
+
+	const player = combatants.findIndex(fighter => fighter.id === targetId);
+
+	if (player === -1) {
+		interaction.reply(
+			'huh?... there is no registered player with your ID, somehow. Sorry.',
+		);
+		return;
+	}
+
+	// determine whether they meant profile pic or death pic
+	if (combatants[player].picUrl !== '') {
+		combatants[player].picDeadUrl =
+			interaction.user.avatarURL({ forceStatic: true }) ?? '';
+
+		backgroundSelection(interaction.message, false, player);
+	} else {
+		combatants[player].picUrl =
+			interaction.user.avatarURL({ forceStatic: true }) ?? '';
+
+		interaction.reply({
+			content: 'Next, please upload a **dead version**.',
+			components: [
+				new ActionRowBuilder<ButtonBuilder>().addComponents(
+					new ButtonBuilder()
+						.setCustomId('grochegames-useprofilepic-' + interaction.user.id)
+						.setLabel('Or click here to just use your profile picture (again).')
+						.setStyle(ButtonStyle.Primary),
+				),
+			],
+		});
+	}
+
+	grocheGamesCore.combatants = combatants;
+}
+
+function clearMessage(interact: ButtonInteraction, targetUser: string) {
+	if (interact.user.id === targetUser) {
+		interact.message.delete();
+	} else {
+		interact.reply(
+			"You should learn to keep your hands off of other people's buttons.",
+		);
+	}
+}
+
+function deleteRegistration(interact: ButtonInteraction, targetUser: string) {
+	if (interact.user.id !== targetUser) {
+		interact.reply(
+			'Wooow. That is so toxic. I cannot believe you would even try that. Shame on you.',
+		);
+		return;
+	} else {
+		const actions = new ActionRowBuilder<ButtonBuilder>();
+
+		actions.addComponents(
+			new ButtonBuilder()
+				.setCustomId('grochegames-clearmessage-' + targetUser)
+				.setStyle(ButtonStyle.Secondary)
+				.setLabel('Nevermind'),
+			new ButtonBuilder()
+				.setCustomId('grochegames-deleteplayerregistration-' + targetUser)
+				.setStyle(ButtonStyle.Danger)
+				.setLabel('Delete registration for myself'),
+		);
+
+		if (teamsWithNpcAllies.includes(interact.channelId)) {
+			actions.addComponents(
+				new ButtonBuilder()
+					.setCustomId('grochegames-deletenpcregistration-' + targetUser)
+					.setStyle(ButtonStyle.Danger)
+					.setLabel('Delete registration for NPC ally'),
+				new ButtonBuilder()
+					.setCustomId('grochegames-deleteallregistration-' + targetUser)
+					.setStyle(ButtonStyle.Danger)
+					.setLabel('Completely start registration over'),
+			);
+		}
+
+		interact.reply({
+			content:
+				'Are you SURE you want to delete your registration? You will have to do it over again.',
+			components: [actions],
+		});
+
+		interact.message.delete();
+	}
+}
+
+function deletePlayerRegistration(
+	interact: ButtonInteraction,
+	targetUser: string,
+) {
+	if (interact.user.id !== targetUser) {
+		interact.reply('Nope. Not your button to click.');
+		return;
+	}
+
+	const combatants = grocheGamesCore.combatants;
+
+	const cIdx = combatants.findIndex(fighter => fighter.id === targetUser);
+
+	if (cIdx === -1) {
+		interact.reply(
+			'...huh. You do not seem to have a registration in the first place.',
+		);
+		interact.message.delete();
+		return;
+	} else {
+		combatants.splice(cIdx, 1);
+		interact.reply(
+			'Registration deleted. You should re-register with `/register` again.',
+		);
+		interact.message.delete();
+	}
+
+	grocheGamesCore.combatants = combatants;
+}
+
+function deleteNPCRegistration(
+	interact: ButtonInteraction,
+	targetUser: string,
+) {
+	if (interact.user.id !== targetUser) {
+		interact.reply('Nope. Not your button to click.');
+		return;
+	}
+
+	const combatants = grocheGamesCore.combatants;
+
+	const cIdx = combatants.findIndex(
+		fighter => fighter.teamId === interact.channelId,
+	);
+
+	if (cIdx === -1) {
+		interact.reply(
+			'...huh. This NPC does not seem to have a registration, somehow.',
+		);
+		interact.message.delete();
+		return;
+	} else {
+		combatants.splice(cIdx, 1);
+		interact.message.delete();
+	}
+
+	interact.reply(
+		'Registration deleted. You should re-register with `/register` again.',
+	);
+
+	grocheGamesCore.combatants = combatants;
+}
+async function deleteAllRegistration(
+	interact: ButtonInteraction,
+	targetUser: string,
+) {
+	if (interact.user.id !== targetUser) {
+		interact.reply('Nope. Not your button to click.');
+		return;
+	}
+
+	let alreadyReplied = false;
+
+	const combatants = grocheGamesCore.combatants;
+
+	const cIdx = combatants.findIndex(fighter => fighter.id === targetUser);
+
+	if (cIdx === -1) {
+		await interact.reply(
+			'...huh. You do not seem to have a registration in the first place.',
+		);
+		alreadyReplied = true;
+	} else {
+		combatants.splice(cIdx, 1);
+	}
+
+	const nIdx = combatants.findIndex(
+		fighter => fighter.teamId === interact.channelId,
+	);
+
+	if (nIdx === -1) {
+		if (alreadyReplied) {
+			await interact.followUp(
+				'...huh. Your NPC ally does not seem to have a registration in the first place.',
+			);
+		} else {
+			await interact.reply(
+				'...huh. Your NPC ally does not seem to have a registration in the first place.',
+			);
+			alreadyReplied = true;
+		}
+	} else {
+		combatants.splice(nIdx, 1);
+	}
+
+	if (alreadyReplied) {
+		await interact.followUp(
+			'Registration deleted. You should re-register with `/register` again.',
+		);
+	} else {
+		await interact.reply(
+			'Registration deleted. You should re-register with `/register` again.',
+		);
+	}
+
+	interact.message.delete();
+
+	grocheGamesCore.combatants = combatants;
 }
 
 function onInteract(interaction: Interaction): boolean {
@@ -407,6 +717,29 @@ function onInteract(interaction: Interaction): boolean {
 				const tokens = filteredId.split('-');
 				const npc = tokens[1] === 'npc';
 				setBackground(interaction, npc, tokens[npc ? 2 : 1]);
+			} else if (filteredId.startsWith('useprofilepic-')) {
+				const tokens = filteredId.split('-');
+				usePlayerProfilePicture(interaction, tokens[1]);
+			} else if (filteredId.startsWith('clearmessage-')) {
+				const tokens = filteredId.split('-');
+				clearMessage(interaction, tokens[1]);
+			} else if (filteredId.startsWith('deleteregistration-')) {
+				const tokens = filteredId.split('-');
+				deleteRegistration(interaction, tokens[1]);
+			} else if (filteredId.startsWith('deleteplayerregistration-')) {
+				const tokens = filteredId.split('-');
+				deletePlayerRegistration(interaction, tokens[1]);
+			} else if (filteredId.startsWith('deletenpcregistration-')) {
+				const tokens = filteredId.split('-');
+				deleteNPCRegistration(interaction, tokens[1]);
+			} else if (filteredId.startsWith('deleteallregistration-')) {
+				const tokens = filteredId.split('-');
+				deleteAllRegistration(interaction, tokens[1]);
+			} else {
+				logger.log(
+					'Unknown button interaction: ' + interaction.customId,
+					WarningLevel.Warning,
+				);
 			}
 			return true;
 		}
@@ -440,24 +773,28 @@ function setBaseRegistration(
 		npcFighter.deathQuote = npcDeathQuote;
 		npcFighter.teamId = interaction.channelId ?? '';
 
-		combatants.push(npcFighter);
-
 		// end interaction chain by prompting user to /register again, to set up their own character
 
-		interaction.reply({
-			content:
-				"You've successfully registered an NPC ally. Next, **please upload a photo you would like to use for the bot.** It must be uploaded to this channel, it cannot be a link.\n\nYou just registered **" +
-				npcName +
-				'**. ' +
-				npcHePronoun +
-				' is an NPC ally of yours, and will utter the following phrase when ' +
-				npcHePronoun +
-				' finds ' +
-				npcHimPronoun +
-				'self dead:\n\n' +
-				npcDeathQuote +
-				'\n\nIf any of this looks wrong, ping MCFX2 so he can manually fix it.',
-		});
+		interaction
+			.reply({
+				content:
+					"You've successfully registered an NPC ally. Next, **please upload a photo you would like to use for the bot.** It must be uploaded to this channel, it cannot be a link.\n\nYou just registered **" +
+					npcName +
+					'**. ' +
+					npcHePronoun +
+					' is an NPC ally of yours, and will utter the following phrase when ' +
+					npcHePronoun +
+					' finds ' +
+					npcHimPronoun +
+					'self dead:\n\n' +
+					npcDeathQuote +
+					'\n\nIf any of this looks wrong, ping MCFX2 so he can manually fix it.',
+			})
+			.then(interact => {
+				npcFighter.backgroundMsgIds.push(interact.id);
+			});
+
+		combatants.push(npcFighter);
 	} else {
 		const name = interaction.fields.getTextInputValue('name');
 		const hePronoun = interaction.fields
@@ -478,6 +815,30 @@ function setBaseRegistration(
 		fighter.teamId = interaction.channelId ?? '';
 		fighter.id = interaction.user.id;
 
+		interaction
+			.reply({
+				content:
+					"You've successfully registered yourself. Next, **please upload a photo you would like to use for yourself.** It must be uploaded to this channel, it cannot be a link.\n\nYou just registered as **" +
+					name +
+					'**. When ' +
+					hePronoun +
+					' dies, ' +
+					hePronoun +
+					' will say:\n\n' +
+					deathQuote +
+					'\n\nIf any of this looks wrong, ping MCFX2 so he can manually fix it.',
+				components: [
+					new ActionRowBuilder<ButtonBuilder>().addComponents(
+						new ButtonBuilder()
+							.setCustomId('grochegames-useprofilepic-' + interaction.user.id)
+							.setLabel('Or click here to just use your profile picture.')
+							.setStyle(ButtonStyle.Primary),
+					),
+				],
+			})
+			.then(interact => {
+				fighter.backgroundMsgIds.push(interact.id);
+			});
 		combatants.push(fighter);
 	}
 
@@ -607,17 +968,107 @@ function npcRegistryModal(interaction: ChatInputCommandInteraction) {
 	interaction.showModal(wizard);
 }
 
+const teamsWithNpcAllies: string[] = [
+	'1061333833091383336',
+	'1061333864250875965',
+	'1061333881086808084',
+	'1061333894030426172',
+	'1061333907779362856',
+	'1061333920005758996',
+	'1061333931724656640', // team morons - special
+];
+
 export function registerTeamCommand(interaction: ChatInputCommandInteraction) {
 	logger.log('registering user in channel ' + interaction.channelId);
 
-	// todo: determine whether user is registering NPC + themselves or just themselves
+	let shouldRegisterPlayer = false;
 
-	// true when either:
-	// - user has already registered an NPC on their team
-	// - user is on an auto-NPC registered team
-	const hasNPCAlly = true;
+	// check if there is already a bot being registered in this channel
+	const existingNpc = grocheGamesCore.combatants.find(
+		fighter => fighter.teamId === interaction.channelId && fighter.id === '',
+	);
 
-	if (hasNPCAlly) {
+	const existingPlayer = grocheGamesCore.combatants.find(
+		fighter => fighter.id === interaction.user.id,
+	);
+
+	if (existingNpc) {
+		if (existingNpc.registrationComplete) {
+			// check against player too
+			if (existingPlayer) {
+				if (existingPlayer.registrationComplete) {
+					interaction.reply({
+						content:
+							'You have already completed registration. Would you like to delete your registration and start over?',
+						components: [
+							new ActionRowBuilder<ButtonBuilder>().addComponents(
+								new ButtonBuilder()
+									.setStyle(ButtonStyle.Secondary)
+									.setCustomId('grochegames-clearmessage-' + existingPlayer.id)
+									.setLabel('Cancel (keep registration)'),
+								new ButtonBuilder()
+									.setStyle(ButtonStyle.Danger)
+									.setCustomId(
+										'grochegames-deleteregistration-' + existingPlayer.id,
+									)
+									.setLabel('Delete registration'),
+							),
+						],
+					});
+					return;
+				} else {
+					interaction.reply(
+						'You seem to already be in the middle of registration. Finish that first.',
+					);
+					return;
+				}
+			} else {
+				shouldRegisterPlayer = true;
+			}
+		} else {
+			interaction.reply(
+				'You seem to already have an NPC registration in progress. Finish that first.',
+			);
+			return;
+		}
+	}
+
+	if (
+		!shouldRegisterPlayer &&
+		!teamsWithNpcAllies.includes(interaction.channelId)
+	) {
+		if (existingPlayer) {
+			if (existingPlayer.registrationComplete) {
+				interaction.reply({
+					content:
+						'You have already completed registration. Would you like to delete your registration and start over?',
+					components: [
+						new ActionRowBuilder<ButtonBuilder>().addComponents(
+							new ButtonBuilder()
+								.setStyle(ButtonStyle.Secondary)
+								.setCustomId('grochegames-clearmessage-' + existingPlayer.id)
+								.setLabel('Cancel (keep registration)'),
+							new ButtonBuilder()
+								.setStyle(ButtonStyle.Danger)
+								.setCustomId(
+									'grochegames-deleteregistration-' + existingPlayer.id,
+								)
+								.setLabel('Delete registration'),
+						),
+					],
+				});
+				return;
+			} else {
+				interaction.reply(
+					'You seem to already be in the middle of registration. Finish that first.',
+				);
+				return;
+			}
+		}
+		shouldRegisterPlayer = true;
+	}
+
+	if (!shouldRegisterPlayer) {
 		npcRegistryModal(interaction);
 	} else {
 		playerRegistryModal(interaction);
