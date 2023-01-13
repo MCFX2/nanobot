@@ -266,7 +266,7 @@ async function onMessageSend(message: Message) {
 					(
 						await message.reply({
 							content:
-								"I've successfully set your image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+								"I've successfully set your image to this. If it looks wrong, you will need to finish this registration and start over by running /register again.",
 							embeds: [new EmbedBuilder().setImage(attachUrl)],
 						})
 					).id,
@@ -281,7 +281,7 @@ async function onMessageSend(message: Message) {
 					(
 						await message.reply({
 							content:
-								"I've successfully set your image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+								"I've successfully set your image to this. If it looks wrong, you will need to finish this registration and start over by running /register again.",
 							embeds: [new EmbedBuilder().setImage(attachUrl)],
 						})
 					).id,
@@ -310,7 +310,7 @@ async function onMessageSend(message: Message) {
 					(
 						await message.reply({
 							content:
-								"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+								"I've successfully set your ally's image to this. If it looks wrong, you will need to finish this registration and start over by running /register again.",
 							embeds: [new EmbedBuilder().setImage(attachUrl)],
 						})
 					).id,
@@ -331,7 +331,7 @@ async function onMessageSend(message: Message) {
 					(
 						await message.reply({
 							content:
-								"I've successfully set your ally's image to this. If it looks wrong, ping MCFX2 to have him try to fix it. Do not delete the message you sent containing the image.",
+								"I've successfully set your ally's image to this. If it looks wrong, you will need to finish this registration and start over by running /register again.",
 							embeds: [new EmbedBuilder().setImage(attachUrl)],
 						})
 					).id,
@@ -428,7 +428,7 @@ function setBackground(
 			});
 
 			interaction.channel?.send(
-				'There you go. You can review all the information above. If there are any mistakes you will need to have MCFX2 reset your registration for you.',
+				'There you go. You can review all the information above. If it looks wrong, you will need to finish this registration and start over by running /register again.',
 			);
 
 			if (isNPC) {
@@ -782,13 +782,16 @@ function setBaseRegistration(
 					npcName +
 					'**. ' +
 					npcHePronoun +
-					' is an NPC ally of yours, and will utter the following phrase when ' +
-					npcHePronoun +
-					' finds ' +
-					npcHimPronoun +
-					'self dead:\n\n' +
-					npcDeathQuote +
-					'\n\nIf any of this looks wrong, ping MCFX2 so he can manually fix it.',
+					' is an NPC ally of yours' +
+					(npcDeathQuote !== ''
+						? ', and will utter the following phrase when ' +
+						  npcHePronoun +
+						  ' finds ' +
+						  npcHimPronoun +
+						  'self dead:\n\n' +
+						  npcDeathQuote
+						: '.') +
+					'\n\nIf it looks wrong, you will need to finish this registration and start over by running /register again.',
 			})
 			.then(interact => {
 				npcFighter.backgroundMsgIds.push(interact.id);
@@ -820,13 +823,16 @@ function setBaseRegistration(
 				content:
 					"You've successfully registered yourself. Next, **please upload a photo you would like to use for yourself.** It must be uploaded to this channel, it cannot be a link.\n\nYou just registered as **" +
 					name +
-					'**. When ' +
-					hePronoun +
-					' dies, ' +
-					hePronoun +
-					' will say:\n\n' +
-					deathQuote +
-					'\n\nIf any of this looks wrong, ping MCFX2 so he can manually fix it.',
+					'**.' +
+					(deathQuote !== ''
+						? 'When ' +
+						  hePronoun +
+						  ' dies, ' +
+						  hePronoun +
+						  ' will say:\n\n' +
+						  deathQuote
+						: '') +
+					'\n\nIf any of this looks wrong, you will have to complete registration and then start over by running /register again.',
 				components: [
 					new ActionRowBuilder<ButtonBuilder>().addComponents(
 						new ButtonBuilder()
