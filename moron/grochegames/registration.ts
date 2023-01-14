@@ -277,6 +277,11 @@ async function onMessageSend(message: Message) {
 						})
 					).id,
 				);
+
+				message.reply({
+					content:
+						"Next, please upload a **dead version**. I know I said this was optional earlier, but I lied. Reuse the same image from before if you're lazy.",
+				});
 				grocheGamesCore.combatants = combatants;
 			}
 		} else if (combatants[user].picDeadUrl === '') {
@@ -352,7 +357,7 @@ async function onMessageSend(message: Message) {
 	//
 }
 
-function setBackground(
+async function setBackground(
 	interaction: ButtonInteraction,
 	isNPC: boolean,
 	backgroundChosen: string,
@@ -415,7 +420,7 @@ function setBackground(
 				}
 			}
 
-			interaction.reply({
+			await interaction.reply({
 				embeds: [
 					new EmbedBuilder()
 						.setTitle(combatants[fIdx].name + ' the ' + background.name)
@@ -433,7 +438,7 @@ function setBackground(
 				],
 			});
 
-			interaction.channel?.send(
+			await interaction.channel?.send(
 				'There you go. You can review all the information above. If it looks wrong, you will need to finish this registration and start over by running /register again.',
 			);
 
