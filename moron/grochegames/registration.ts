@@ -251,6 +251,12 @@ async function backgroundSelection(
 async function onMessageSend(message: Message) {
 	const combatants = grocheGamesCore.combatants;
 
+	// only run this section when user is in their own team channel
+	// users only have access to their own team channel, so let's assume if it's a team channel we're fine
+	if (combatants.every(fighter => fighter.teamId !== message.channelId)) {
+		return;
+	}
+
 	// determine whether user is missing profile pic
 	const user = combatants.findIndex(
 		fighter => fighter.id === message.author.id,
@@ -983,6 +989,24 @@ const teamsWithNpcAllies: string[] = [
 	'1061333920005758996',
 	'1061333931724656640', // team morons - special
 ];
+
+export function teamNameCommand(interaction: ChatInputCommandInteraction) {
+	// validity checks
+	const combatants = grocheGamesCore.combatants;
+
+	// ensure command was done in team channel
+	const teamId = interaction.channelId;
+	if (combatants.every(fighter => fighter.teamId !== teamId)) {
+		interaction.reply({
+			content:
+				"You either haven't registered yet, in which case do that first, or you're trying to run this outside your team channel. Fix that and try again.",
+			ephemeral: true,
+		});
+		return;
+	}
+
+	grocheGamesCore.combatants = combatants;
+}
 
 export function registerTeamCommand(interaction: ChatInputCommandInteraction) {
 	logger.log('registering user in channel ' + interaction.channelId);
