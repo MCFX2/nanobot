@@ -11,6 +11,7 @@ import {
 	Message,
 	ModalBuilder,
 	ModalSubmitInteraction,
+	TextChannel,
 	TextInputBuilder,
 	TextInputStyle,
 } from 'discord.js';
@@ -1000,6 +1001,7 @@ export function teamNameCommand(interaction: ChatInputCommandInteraction) {
 	const combatants = grocheGamesCore.combatants;
 
 	// ensure command was done in team channel
+
 	const teamId = interaction.channelId;
 	if (combatants.every(fighter => fighter.teamId !== teamId)) {
 		interaction.reply({
@@ -1009,6 +1011,23 @@ export function teamNameCommand(interaction: ChatInputCommandInteraction) {
 		});
 		return;
 	}
+
+	const name = interaction.options.getString('name', true);
+
+	// set team name internally
+	for (let i = 0; i < combatants.length; ++i) {
+		if (combatants[i].teamId === teamId) {
+			combatants[i].team = name;
+		}
+	}
+	// rename team channel
+	// remove all spaces and special characters, make lowercase
+	const filteredName = name
+		.toLowerCase()
+		.replace(/ /g, '-')
+		.replace(/([^a-z0-9\-_]+)/gi, '');
+
+	(interaction.channel as TextChannel).setName('team-' + filteredName);
 
 	grocheGamesCore.combatants = combatants;
 }
