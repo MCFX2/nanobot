@@ -89,16 +89,20 @@ export async function followUserCommand(
 		);
 
 		if (twUser.errors) {
-			interaction.reply(
-				'sorry bud i have no idea who this ' + username + ' guy is',
-			);
+			interaction.reply({
+				content: 'sorry bud i have no idea who this ' + username + ' guy is',
+				ephemeral: true,
+			});
 			return;
 		} else {
 			username = twUser.data.id;
 		}
 	}
 	followUser(username, '0', targetChannel, vettingChannel);
-	interaction.reply('I will follow this fucker until the day i die');
+	interaction.reply({
+		content: 'I will follow this fucker until the day i die',
+		ephemeral: true,
+	});
 }
 
 export async function unFollowUserCommand(
@@ -107,7 +111,7 @@ export async function unFollowUserCommand(
 	const userArg = interaction.options.get('user');
 
 	if (!userArg?.value) {
-		interaction.reply('who tf is that');
+		interaction.reply({ content: 'who tf is that', ephemeral: true });
 		return;
 	}
 
@@ -119,16 +123,18 @@ export async function unFollowUserCommand(
 		});
 
 		if (twUser.errors) {
-			interaction.reply(
-				'sorry bud i have no idea who this ' + username + ' guy is',
-			);
+			interaction.reply({
+				content: 'sorry bud i have no idea who this ' + username + ' guy is',
+				ephemeral: true,
+			});
+
 			return;
 		} else {
 			username = twUser.data.id;
 		}
 	}
 	unfollowUser(username);
-	interaction.reply('the chase is off');
+	interaction.reply({ content: 'the chase is off', ephemeral: true });
 }
 
 function followUser(
