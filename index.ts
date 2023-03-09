@@ -21,6 +21,7 @@ import { TwitFollow } from './moron/feeds/twitfollow';
 import { TwitFix } from './moron/twitfix';
 import { GrocheGamesRegistration } from './moron/grochegames/registration';
 import { Error } from './moron/util';
+import { Secretary } from './moron/secretary';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -111,6 +112,7 @@ let modules: MoronModule[] = [
 	TwitFix,
 	Stars,
 	GrocheGamesRegistration,
+	Secretary
 ];
 
 type InitCallback = (client: Client) => Promise<void>;
