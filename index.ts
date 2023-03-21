@@ -225,16 +225,6 @@ client.on('messageCreate', async msg => {
 /// reactions
 ///
 
-type ReactionCallback = (reaction: MessageReaction) => Promise<void>;
-
-let reactionCallbacks: ReactionCallback[] = [];
-
-/*
-export function registerReactionListener(listener: ReactionCallback) {
-	reactionCallbacks.push(listener);
-}
-*/
-
 client.on('messageReactionAdd', async react => {
 	if (react.me) return;
 
@@ -242,9 +232,11 @@ client.on('messageReactionAdd', async react => {
 		react = await react.fetch();
 	}
 
-	reactionCallbacks.forEach(cb => {
+	modules.forEach(module => {
 		try {
-			cb(react as MessageReaction);
+			if (module.onReactionAdd) {
+				module.onReactionAdd(react as MessageReaction);
+			}
 		} catch (err: any) {
 			logger.log('Exception thrown handling reaction', WarningLevel.Error);
 			logger.log(err, WarningLevel.Error);
