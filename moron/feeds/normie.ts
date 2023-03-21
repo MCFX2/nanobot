@@ -11,7 +11,7 @@ export function init_normie(clientInstance: Client) {
 	client = clientInstance;
 }
 
-const apiUrl: string = 'https://meme-api.herokuapp.com/gimme';
+const apiUrl: string = 'https://meme-api.com/gimme';
 
 async function postReceived(jsonData: any) {
 	logger.log(jsonData.url, WarningLevel.Notice);

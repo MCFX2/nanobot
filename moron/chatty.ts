@@ -7,6 +7,7 @@ import {
 	stringSet,
 	getEarliestMatch,
 	getLastMatch,
+	readCacheFileAsJson,
 } from './util';
 const { serverLog } = require('../groche-channels.json');
 
@@ -14,6 +15,8 @@ interface SimpleChatTrigger {
 	replies: string[];
 	triggers: StringMatch[];
 }
+
+let simpleChatTriggers: SimpleChatTrigger[] = [];
 
 // dev mode here makes the bot reply with 100% probability, and makes it only reply in serverLog
 const devMode: boolean = false;
@@ -156,6 +159,8 @@ async function chatty_init(clientInstance: Client) {
 	}
 
 	client = clientInstance;
+
+	simpleChatTriggers = readCacheFileAsJson('simpleChatTriggers.json');
 }
 
 async function chatty_onMessageSend(msg: Message) {
@@ -171,9 +176,7 @@ async function chatty_onMessageSend(msg: Message) {
 		if (msg.channelId !== serverLog) {
 			return;
 		}
-	}
-
-	if (!devMode) {
+	} else {
 		if (!msg.mentions.has(client.user) && Math.random() > 0.05) {
 			return;
 		}
@@ -332,123 +335,6 @@ async function chatty_onMessageSend(msg: Message) {
 			true,
 			false,
 			true,
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
-		)
-	) {
-		return;
-	} else if (
-		smartReply(
-			msg,
-			[
-				topic => 'placeholder1',
-				topic => 'placeholder2',
-				topic => 'placeholder3',
-			],
-			stringSet(['test1', 'test2'], true, true),
-			stringSet(['test3', 'test4'], true, true),
 		)
 	) {
 		return;
@@ -773,9 +659,9 @@ async function chatty_onMessageSend(msg: Message) {
 	} else if (
 		triggerIfMsgContains(
 			msg,
-			stringSet(['????????????'], false, true),
+			stringSet(['???????'], false, true),
 			basicReplyFunction([
-				'!!!!!!!!!!!!!',
+				'!!!!!!!',
 				'this is like a confusion world record',
 			]),
 		)
@@ -784,7 +670,7 @@ async function chatty_onMessageSend(msg: Message) {
 	} else if (
 		triggerIfMsgContains(
 			msg,
-			stringSet(['?????'], false, true),
+			stringSet(['?'], false, true),
 			basicReplyFunction([
 				'idk man google it',
 				"you're cute when you're unsure of yourself",
@@ -811,54 +697,6 @@ async function chatty_onMessageSend(msg: Message) {
 		)
 	) {
 		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
-	} else if (
-		triggerIfMsgContains(
-			msg,
-			stringSet(['msg1', 'msg2', 'msg3'], true, true),
-			basicReplyFunction(['test', 'test2', 'test3']),
-		)
-	) {
-		return;
 	} else if (msg.content.length > 140) {
 		basicReplyFunction([
 			'thats a lotta words',
@@ -870,6 +708,20 @@ async function chatty_onMessageSend(msg: Message) {
 			'can you repeat that i wasnt paying attention',
 			'sorry that happened',
 			'happy for u',
+			'this message would not fit in a tweet',
 		])(msg);
+	} else {
+		if(simpleChatTriggers.every((trigger) => {
+			if (triggerIfMsgContains(msg, trigger.triggers, basicReplyFunction(trigger.replies))) {
+				// break on first match
+				return false;
+			}
+			return true;
+		})) {
+			// proceed to check complex triggers (TODO)
+		}
+		else {
+			return;
+		}
 	}
 }

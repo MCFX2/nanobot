@@ -286,6 +286,12 @@ export function readCacheFileAsJson(filename: string): any {
 	}
 }
 
+// same as writeCacheFile but covers the most common use case
+// where we want to simply dump the object as-is as a formatted JSON
+export function writeCacheFileAsJson(filename: string, contents: any) {
+	writeCacheFile(filename, Buffer.from(JSON.stringify(contents, null, '\t')));
+}
+
 ///
 /// RSS parsing convenience
 ///
