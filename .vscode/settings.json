@@ -7,5 +7,10 @@
 	],
 	"files.associations": {
 		"xiosbase": "cpp"
-	}
+	},
+	"cSpell.words": [
+		"demux",
+		"highestaudio",
+		"ytdl"
+	]
 }

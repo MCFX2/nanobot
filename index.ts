@@ -42,6 +42,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMessageReactions,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildVoiceStates,
 	],
 	presence: {
 		activities: [{ name: 'your mom', type: ActivityType.Competing }],

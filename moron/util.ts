@@ -327,6 +327,9 @@ export function getSingleElement(
 export function isUrlDomain(text: string, domain: string): boolean {
 	if (isUrl(text)) {
 		const url = new URL(text);
+		if (url.hostname.startsWith('www.')) {
+			url.hostname = url.hostname.substring(4);
+		}
 		if (url.hostname == domain) return true;
 		return false;
 	}
@@ -615,3 +618,10 @@ export function fullRoll(
 		return rollWithDisadvantage(min, max, disadvantages, lowerIsBetter);
 	}
 }
+
+///
+/// Misc utility
+///
+
+// async delay
+export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
