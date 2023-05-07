@@ -3,7 +3,6 @@ import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
 import { AudioPlayer, AudioPlayerStatus, NoSubscriberBehavior, StreamType, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
-import { promisify } from "node:util";
 import { delay, isUrlDomain } from "./util";
 import isUrl from "is-url";
 
@@ -19,7 +18,35 @@ export const Bard: MoronModule = {
 interface SongQueueEntry {
 	url: string;
 	title: string;
+	thumbnailUrl: string;
+	authorUrl: string;
+	authorAvatarUrl?: string;
+	authorName: string;
+	requestedBy: GuildMember;
+	interactionChannel: TextChannel;
+	lengthSeconds: number;
+	currentProgress?: number;
+	timeStarted?: number;
 }
+
+async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interactionChannel: TextChannel): Promise<SongQueueEntry>
+{
+	const info = (await ytdl.getBasicInfo(url)).videoDetails;
+
+	return {
+		url: url,
+		title: info.title,
+		thumbnailUrl: info.thumbnails[0].url,
+		authorUrl: info.author.channel_url,
+		authorAvatarUrl: info.author.thumbnails?.at(0)?.url,
+		authorName: info.author.name,
+		requestedBy: requestedBy,
+		interactionChannel: interactionChannel,
+		lengthSeconds: parseInt(info.lengthSeconds) * 1000,
+	}
+}
+
+let isReconnecting: boolean = false;
 
 const songQueue: SongQueueEntry[] = [];
 
@@ -35,11 +62,28 @@ let player: AudioPlayer = createAudioPlayer({
 		maxMissedFrames: 1,
 		noSubscriber: NoSubscriberBehavior.Pause,
 	}
-}).on('error', (error) => { 
+}).on('error', async (error) => {
+	isReconnecting = true;
+	logger.log('top');
+	if (nowPlaying) {
+		if (!nowPlaying.timeStarted)
+		{
+			logger.log('Song started playing but timeStarted was undefined', WarningLevel.Error);
+			nowPlaying = songQueue.shift();
+		}
+		else {
+			nowPlaying.currentProgress = (+Date.now()) - nowPlaying.timeStarted;
+		}
+
+		await delay(1000);
+		startStream();
+	}
 	logger.log(error.message, WarningLevel.Error);
+	isReconnecting = false;
 });
 
 function getCurrentStream(guild: Guild, channelId: string, create: boolean = true) {
+	logger.log('getCurrentStream');
 	const connection = getVoiceConnection(channelId);
 	if (!connection && create)
 	{
@@ -54,15 +98,22 @@ function getCurrentStream(guild: Guild, channelId: string, create: boolean = tru
 					await entersState(newConnection, VoiceConnectionStatus.Connecting, 5000);
 					// probably moved voice channel
 				}
-				catch { 
-					newConnection.destroy();
+				catch {
 					// probably removed from voice channel
+					songQueue.length = 0;
+					logger.log('nowPlaying undefined B');
+					nowPlaying = undefined;
+					newConnection.destroy();
 				}
 			} else if (newConnection.rejoinAttempts < 5) {
 				await delay((newConnection.rejoinAttempts + 1) * 5000);
 				newConnection.rejoin();
 			}
 			else {
+				songQueue.length = 0;
+				logger.log('nowPlaying undefined C');
+				nowPlaying = undefined;
+				// the player probably was destroyed already
 				newConnection.destroy();
 			}
 		})
@@ -74,15 +125,26 @@ function getCurrentStream(guild: Guild, channelId: string, create: boolean = tru
 	return connection;
 }
 
-async function startStream(url: string, channel: TextChannel)
+async function startStream()
 {
-	player.unpause();
-	const { stream, type } = await demuxProbe(ytdl(url, {
+	logger.log('attempting to begin a new stream with nowPlaying of ' + nowPlaying?.title ?? 'undefined');
+	if (!nowPlaying)
+	{
+		logger.log('nowPlaying was undefined when startStream was called', WarningLevel.Error);
+		return;
+	}
+
+	logger.log('current progress: ' + nowPlaying.currentProgress ?? 'undefined');
+
+	const { stream, type } = await demuxProbe(ytdl(nowPlaying.url, {
 		filter: "audioonly",
 		quality: "highestaudio",
+		highWaterMark: 1 << 25,
+		begin: nowPlaying.currentProgress ? nowPlaying.currentProgress : 0,
 	}));
-	const info = await ytdl.getInfo(url);
-	channel.send({ content: `you are now listening to ${info.videoDetails.title}\n\nbitch`});
+
+	nowPlaying.timeStarted = +Date.now();
+
 	const resource = createAudioResource(stream, {
 		inlineVolume: true,
 		inputType: type,
@@ -91,15 +153,24 @@ async function startStream(url: string, channel: TextChannel)
 	player.play(resource);
 	const cb = (_: any, newStatus: { status: string; }) => {
 		if (newStatus.status === "idle") {
-			if (songQueue.length > 0) {
-				nowPlaying = songQueue.shift();
-				startStream(nowPlaying!.url, channel);
+			if (isReconnecting) return;
+			if (!nowPlaying)
+			{
+				logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
 			}
 			else {
-				channel.send({ content: "i'm done playing music now. the silence is deafening" });
-				const stream = getCurrentStream(channel.guild, channel.id);
-				nowPlaying = undefined;
-				stream?.destroy();
+				if (songQueue.length > 0) {
+					nowPlaying = songQueue.shift();
+					startStream();
+				}
+				else {
+					const channel = nowPlaying.interactionChannel;
+					channel.send({ content: "i'm done playing music now. the silence is deafening" });
+					const stream = getCurrentStream(channel.guild, channel.id);
+					logger.log('nowPlaying undefined A');
+					nowPlaying = undefined;
+					stream?.destroy();
+				}
 			}
 			player.off("stateChange", cb);
 		}
@@ -107,7 +178,7 @@ async function startStream(url: string, channel: TextChannel)
 	player.on("stateChange", cb);
 }
 
-export function playAudioCommand(interaction: ChatInputCommandInteraction) {
+export async function playAudioCommand(interaction: ChatInputCommandInteraction) {
 	const item = interaction.options.getString('item');
 	if (!item) {
 		interaction.reply({ content: 'wtf (no argument)', ephemeral: true });
@@ -151,15 +222,14 @@ export function playAudioCommand(interaction: ChatInputCommandInteraction) {
 
 	}
 
+	const url = item;
+
 	if (nowPlaying)
 	{
 		// queue up a song
-		songQueue.push({
-			url: item,
-			title: 'poopoo peepee'
-		});
+		interaction.reply('that has been added to the queue. please take a number (#' + (songQueue.length + 1) + ')');
+		songQueue.push(await SongEntryFromUrl(url, member, interaction.channel as TextChannel));
 
-		interaction.reply('that has been added to the queue. please take a number (#' + songQueue.length + ')');
 	} else {
 		const connection = getCurrentStream(voiceChannel.guild, voiceChannel.id, true);
 
@@ -167,14 +237,11 @@ export function playAudioCommand(interaction: ChatInputCommandInteraction) {
 		if (!connection) return;
 	
 		connection.once(VoiceConnectionStatus.Ready, async () => {
-			startStream(item, interaction.channel as TextChannel);
+			nowPlaying = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
+			startStream();
 		});
 
 		interaction.reply('okay, i\'m joining the channel now, ready or not here i come');
-		nowPlaying = {
-			url: item,
-			title: 'poopoo peepee'
-		}
 	}
 
 }
