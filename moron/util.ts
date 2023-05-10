@@ -625,3 +625,27 @@ export function fullRoll(
 
 // async delay
 export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// returns a time in the format hh:mm:ss from a number of seconds
+export function getTimeFromSeconds(seconds: number): string {
+	let hours = Math.floor(seconds / 3600);
+	let minutes = Math.floor((seconds % 3600) / 60);
+	let secs = Math.floor(seconds % 60);
+
+	let timeString = '';
+	if (hours > 0) {
+		timeString += hours + ':';
+	}
+
+	if(hours > 0 && minutes < 10) {
+		timeString += '0';
+	}
+	timeString += minutes + ':';
+
+	if(secs < 10) {
+		timeString += '0';
+	}
+	timeString += secs;
+
+	return timeString;
+}
