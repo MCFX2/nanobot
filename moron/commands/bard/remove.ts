@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { playAudioCommand } from '../../bard';
+import { removeCommand } from '../../bard';
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -9,9 +9,9 @@ module.exports = {
 			return option
 				.setRequired(true)
 				.setName('item')
-				.setDescription('The song to remove (# or URL)');
+				.setDescription('The song to remove (# in queue)');
 		}),
 	async execute(interaction: ChatInputCommandInteraction) {
-		playAudioCommand(interaction);
+		removeCommand(interaction);
 	},
 };

@@ -360,3 +360,28 @@ export function nowPlayingCommand(interaction: ChatInputCommandInteraction) {
 	
 	interaction.reply({ embeds: [embed] });
 }
+
+export function removeCommand(interaction: ChatInputCommandInteraction) {
+	const item = interaction.options.getString('item') ?? '';
+	const index = parseInt(item);
+
+	if (Number.isNaN(index)) {
+		interaction.reply({ content: 'that is not a valid number (support for this coming eventually)', ephemeral: true });
+		return;
+	}
+
+	if (index < 0 || index > songQueue.length)
+	{
+		interaction.reply({ content: 'gross. bad number. go to jail', ephemeral: true });
+		return;
+	}
+
+	if (index === 0)
+	{
+		skipCommand(interaction);
+		return;
+	}
+
+	const removed = songQueue.splice(index - 1, 1);
+	interaction.reply('i took ' + removed[0].title + ' outta the lineup boss. hope you like that.');
+}

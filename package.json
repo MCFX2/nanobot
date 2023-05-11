@@ -17,7 +17,9 @@
     "twitter-api-sdk": "^1.2.1",
     "twitter-api-v2": "^1.12.9",
     "utf-8-validate": "^5.0.9",
-    "ytdl-core": "^4.11.4"
+    "ytdl-core": "^4.11.4",
+    "ytpl": "^2.3.0",
+    "ytsr": "^3.8.2"
   },
   "name": "nanobot",
   "version": "1.0.0",
