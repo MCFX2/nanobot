@@ -12,6 +12,7 @@
 		"demux",
 		"highestaudio",
 		"ytdl",
+		"ytpl",
 		"ytsr"
 	]
 }
