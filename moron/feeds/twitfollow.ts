@@ -181,7 +181,8 @@ function twitterTimelineTweetsToTweets(
 	timeline: TweetUserTimelineV2Paginator,
 ): Tweet[] {
 	let builtTweets: Tweet[] = [];
-	timeline.tweets.forEach(tweet => {
+	const revTweets = timeline.tweets.reverse();
+	revTweets.forEach(tweet => {
 		let newTweet = new Tweet();
 
 		newTweet.tweetId = tweet.id;

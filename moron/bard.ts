@@ -1,10 +1,11 @@
-import { ChatInputCommandInteraction, Client, EmbedBuilder, Guild, GuildMember, TextChannel } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, Client, EmbedBuilder, Guild, GuildMember, TextChannel } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
 import { AudioPlayer, AudioPlayerStatus, NoSubscriberBehavior, StreamType, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
 import { delay, getTimeFromSeconds, isUrlDomain } from "./util";
 import isUrl from "is-url";
+import ytsr from "ytsr";
 
 const devMode: boolean = true;
 
@@ -12,7 +13,6 @@ const logger: Logger = new Logger('bard', devMode ? WarningLevel.Info : WarningL
 
 export const Bard: MoronModule = {
 	name: 'bard',
-	onInit: bard_Init,
 }
 
 interface SongQueueEntry {
@@ -27,6 +27,7 @@ interface SongQueueEntry {
 	lengthMs: number;
 	currentProgressMs?: number;
 	timeStartedMs?: number;
+	playlist?: string;
 }
 
 async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interactionChannel: TextChannel): Promise<SongQueueEntry>
@@ -50,12 +51,7 @@ let isReconnecting: boolean = false;
 
 const songQueue: SongQueueEntry[] = [];
 
-let discordClient: Client<boolean>;
 let nowPlaying: SongQueueEntry | undefined = undefined;
-
-function bard_Init(client: Client<boolean>) {
-	discordClient = client;
-}
 
 let player: AudioPlayer = createAudioPlayer({
 	behaviors: {
@@ -156,16 +152,13 @@ async function startStream()
 				logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
 			}
 			else {
-				if (songQueue.length > 0) {
-					nowPlaying = songQueue.shift();
-					startStream();
+				if (advanceQueue())
+				{
+					// do nothing
 				}
 				else {
 					const channel = nowPlaying.interactionChannel;
 					channel.send({ content: "i'm done playing music now. the silence is deafening" });
-					const stream = getCurrentStream(channel.guild, channel.id);
-					nowPlaying = undefined;
-					stream?.destroy();
 				}
 			}
 			player.off("stateChange", cb);
@@ -202,6 +195,7 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 		return;
 	}
 
+	let url: string = item;
 	if (!isUrlDomain(item, 'youtube.com') && !isUrlDomain(item, 'music.youtube.com'))
 	{
 		if (isUrl(item))
@@ -212,19 +206,24 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 		else
 		{
 			// assume it's a search term
-			interaction.reply({ content: "this is not a thing yet. but someday", ephemeral: true });
-			return;
+			const searchResults = ytsr(item, {
+				limit: 20,
+				pages: 1,
+				safeSearch: false,
+			});
+
+			// for now, assume that they want the first (video) result
+			const firstVideo = (await searchResults).items.find(i => i.type === "video") as ytsr.Video;
+			url = firstVideo.url;
 		}
-
 	}
-
-	const url = item;
 
 	if (nowPlaying)
 	{
 		// queue up a song
-		interaction.reply('that has been added to the queue. please take a number (#' + (songQueue.length + 1) + ')');
-		songQueue.push(await SongEntryFromUrl(url, member, interaction.channel as TextChannel));
+		const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
+		interaction.reply(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length + 1) + ')');
+		songQueue.push(songEntry);
 
 	} else {
 		const connection = getCurrentStream(voiceChannel.guild, voiceChannel.id, true);
@@ -242,26 +241,37 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 
 }
 
+// returns true when the queue was advanced, false when the queue was empty
+function advanceQueue(): boolean {
+	if (songQueue.length > 0)
+	{
+		nowPlaying = songQueue.shift();
+		startStream();
+		return true;
+	}
+	else
+	{
+		const channel = nowPlaying!.interactionChannel;
+		const stream = getCurrentStream(channel.guild, channel.id);
+		nowPlaying = undefined;
+		stream?.destroy();
+		return false;
+	}
+}
+
 export function skipCommand(interaction: ChatInputCommandInteraction) {
 	if (!nowPlaying)
 	{
 		interaction.reply({ content: 'nothing is playing right now, so there\'s nothing to skip', ephemeral: true });
 		return;
 	}
-
-	if (songQueue.length > 0)
+	
+	if (advanceQueue())
 	{
-		nowPlaying = songQueue.shift();
 		interaction.reply('okay, i\'m skipping that song');
-		startStream();
 	}
-	else
-	{
-		const channel = nowPlaying.interactionChannel;
-		channel.send({ content: "i'm done playing music now. the silence is deafening" });
-		const stream = getCurrentStream(channel.guild, channel.id);
-		nowPlaying = undefined;
-		stream?.destroy();
+	else {
+		interaction.reply({ content: 'i am slain (queue is empty)' });
 	}
 }
 
@@ -361,7 +371,7 @@ export function nowPlayingCommand(interaction: ChatInputCommandInteraction) {
 	interaction.reply({ embeds: [embed] });
 }
 
-export function removeCommand(interaction: ChatInputCommandInteraction) {
+export async function removeCommand(interaction: ChatInputCommandInteraction) {
 	const item = interaction.options.getString('item') ?? '';
 	const index = parseInt(item);
 
@@ -378,10 +388,71 @@ export function removeCommand(interaction: ChatInputCommandInteraction) {
 
 	if (index === 0)
 	{
-		skipCommand(interaction);
-		return;
+		if (nowPlaying?.playlist)
+		{
+			const yesButton = new ButtonBuilder()
+				.setCustomId('removePlaylist')
+				.setLabel('Yes')
+				.setStyle(ButtonStyle.Danger);
+			const noButton = new ButtonBuilder()
+				.setCustomId('removeSingle')
+				.setLabel('No')
+				.setStyle(ButtonStyle.Success);
+			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(yesButton, noButton);
+
+			const response = await interaction.reply({
+				content: 'That song appears to be part of a playlist. Do you want to remove the entire playlist?',
+				components: [row],
+				ephemeral: true
+			});
+
+
+			try {
+				const confirmation = await response.awaitMessageComponent({ time: 30000 });
+				if (confirmation.customId === 'removePlaylist')
+				{
+					// remove all songs from queue that are part of the playlist
+					const oldSize = songQueue.length;
+					Object.assign(songQueue, songQueue.filter(song => song.playlist !== nowPlaying?.playlist));
+					interaction.followUp({ content: 'I removed ' + (oldSize - songQueue.length) + ' songs from the queue.', ephemeral: true });
+					//skipCommand(interaction);
+				}
+				else {
+					// assume they meant to not do that
+					if (songQueue.length > 0)
+					{
+						nowPlaying = songQueue.shift();
+						startStream();
+					}
+					return;
+				}
+			}
+			catch (e)
+			{
+				interaction.editReply({ content: 'You took too long to respond. I\'m not removing the playlist OR the song. fucko.', components: [] });
+				return;
+			}
+			return;
+		}
+		else
+		{
+			skipCommand(interaction);
+			return;
+		}
 	}
 
 	const removed = songQueue.splice(index - 1, 1);
 	interaction.reply('i took ' + removed[0].title + ' outta the lineup boss. hope you like that.');
+}
+
+export function shuffleCommand(interaction: ChatInputCommandInteraction) {
+	interaction.reply({content: 'this command is not yet implemented', ephemeral: true});
+}
+
+export function randomizeCommand(interaction: ChatInputCommandInteraction) {
+	interaction.reply({content: 'this command is not yet implemented', ephemeral: true});
+}
+
+export function playlistCommand(interaction: ChatInputCommandInteraction) {
+	interaction.reply({content: 'this command is not yet implemented', ephemeral: true});
 }
