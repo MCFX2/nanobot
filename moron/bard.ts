@@ -31,7 +31,7 @@ interface SongQueueEntry {
 	playlist?: string;
 }
 
-async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interactionChannel: TextChannel): Promise<SongQueueEntry>
+async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interactionChannel: TextChannel): Promise<SongQueueEntry | undefined>
 {
 	try {
 		const info = (await ytdl.getBasicInfo(url)).videoDetails;
@@ -53,16 +53,7 @@ async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interacti
 		logger.log(err.message, WarningLevel.Error);
 		logger.log(err.stack, WarningLevel.Error);
 		logger.log('Could not get info from url - something is wrong with the url checks up to this point', WarningLevel.Error);
-		return {
-			url: url,
-			title: 'Unknown',
-			thumbnailUrl: 'https://i.imgur.com/u6ROwvK.png',
-			authorUrl: 'about:blank',
-			authorName: 'Unknown',
-			requestedBy: requestedBy,
-			interactionChannel: interactionChannel,
-			lengthMs: 1,
-		};
+		return undefined;
 	}
 }
 
@@ -308,67 +299,108 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 			});
 
 			// wait for a response
-			const response = await interaction.channel?.awaitMessageComponent({
-				time: 30000,
-			});
+			let response;
+			try {
+				const response = await interaction.channel?.awaitMessageComponent({
+					time: 30000,
+				});
 
-			if (!response) {
+				if (!response) {
+					interaction.followUp('okay.. i\'ve cancelled that');
+					return;
+				}
+
+							// long playlists can take a while to add, so defer the replies
+
+				if (response.customId === 'addPlaylist') {
+					response.deferReply();
+					const oldQueueLength = songQueue.length;
+					const startedEmpty = !nowPlaying;
+
+					let failedItems = 0;
+					let actualItems = 0;
+					for (const entry of playlistItems.items) {
+						const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
+						if (!songEntry) {
+							failedItems++;
+							continue;
+						}
+						songEntry.playlist = playlist;
+						playSong(songEntry, voiceChannel);
+						actualItems++;
+					}
+
+					await response.followUp('okay, i\'ve added ' + actualItems + ' songs to the queue. please take a number (#' +
+						(startedEmpty ? 0 : (oldQueueLength + 1)) + '-' + songQueue.length
+						+ ')');
+					interaction.deleteReply();
+					return;
+				} else if (response.customId === 'addSong') {
+					response.deferReply();
+					url = url.substring(0, listIdx);
+					const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
+					if (!songEntry) {
+						await response.followUp('(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
+						interaction.deleteReply();
+						return;
+					}
+					if (playSong(songEntry, voiceChannel)) {
+						await response.followUp(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
+					}
+					else {
+						await interaction.followUp('okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
+					}
+					interaction.deleteReply();
+					return;
+				}
+				else if (response.customId === 'cancel') {
+					interaction.editReply({ content: 'okay, i\'m not adding anything', components: [] });
+					return;
+				}
+			}
+			catch (e: any)
+			{
 				interaction.editReply({ content: 'you took too long, i\'m not waiting for you anymore', components: [] });
-				return;
-			}
-
-			// long playlists can take a while to add, so defer the replies
-
-			if (response.customId === 'addPlaylist') {
-				response.deferReply();
-				const oldQueueLength = songQueue.length;
-
-				for (const entry of playlistItems.items) {
-					const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
-					songEntry.playlist = playlist;
-					playSong(songEntry, voiceChannel);
-				}
-
-				await response.followUp('okay, i\'ve added ' + numItems + ' songs to the queue. please take a number (#' +
-					(oldQueueLength + 1) + '-' + songQueue.length
-					+ ')');
-				interaction.deleteReply();
-				return;
-			} else if (response.customId === 'addSong') {
-				response.deferReply();
-				url = url.substring(0, listIdx);
-				const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
-				if (playSong(songEntry, voiceChannel)) {
-					await response.followUp(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
-				}
-				else {
-					await interaction.followUp('okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
-				}
-				interaction.deleteReply();
-				return;
-			}
-			else if (response.customId === 'cancel') {
-				interaction.editReply({ content: 'okay, i\'m not adding anything', components: [] });
 				return;
 			}
 		}
 		else {
 			const oldQueueLength = songQueue.length;
-
-			interaction.reply('okay, i\'ve added ' + numItems + ' songs to the queue. please take a number (#' +
-			(oldQueueLength + 1) + '-' + (oldQueueLength + numItems)
-				+ ')');
-			
+			const startedEmpty = !nowPlaying;
+			interaction.deferReply();
+			let failedItems = 0;
+			let successItems = 0;
 			for (const entry of playlistItems.items) {
 				const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
+				if (!songEntry) {
+					failedItems++;
+					continue;
+				}
 				songEntry.playlist = playlist;
 				playSong(songEntry, voiceChannel);
+				successItems++;
 			}
+
+			if (failedItems === numItems) {
+				interaction.followUp('jesus what a trainwreck. all songs from playlist failed to be added. i\'m not even gonna try to add it to the queue.');
+				return;
+			}
+
+			interaction.followUp('okay, i\'ve added ' + successItems + ' songs to the queue. please take a number (#' +
+			(startedEmpty ? 0 : (oldQueueLength + 1)) + '-' + songQueue.length
+				+ ')');
 			return;
 		}
 	}
 
 	const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
+
+	if (!songEntry)
+	{
+		interaction.reply('(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
+		return;
+	}
+
 	if (playSong(songEntry, voiceChannel)) {
 		interaction.reply(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
 	} else {
