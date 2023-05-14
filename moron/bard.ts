@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, Client, Colors, EmbedBuilder, Guild, GuildMember, TextChannel, VoiceBasedChannel } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
-import { AudioPlayer, AudioPlayerStatus, NoSubscriberBehavior, StreamType, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
+import { AudioPlayer, AudioPlayerIdleState, AudioPlayerStatus, NoSubscriberBehavior, StreamType, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
 import { delay, getTimeFromSeconds, isUrlDomain } from "./util";
 import isUrl from "is-url";
@@ -66,11 +66,10 @@ let nowPlaying: SongQueueEntry | undefined = undefined;
 let player: AudioPlayer = createAudioPlayer({
 	behaviors: {
 		maxMissedFrames: 1,
-		noSubscriber: NoSubscriberBehavior.Pause,
+		noSubscriber: NoSubscriberBehavior.Stop,
 	}
 }).on('error', async (error) => {
 	isReconnecting = true;
-	logger.log('top');
 	if (nowPlaying) {
 		if (!nowPlaying.timeStartedMs)
 		{
@@ -82,7 +81,7 @@ let player: AudioPlayer = createAudioPlayer({
 		}
 
 		await delay(1000);
-		startStream();
+		playStream();
 	}
 	logger.log(error.message, WarningLevel.Error);
 	isReconnecting = false;
@@ -120,25 +119,25 @@ function getCurrentStream(guild: Guild, channelId: string, create: boolean = tru
 				newConnection.destroy();
 			}
 		})
-			.on(VoiceConnectionStatus.Destroyed, () => player.stop());
+			.on(VoiceConnectionStatus.Destroyed, () => {
+				player.stop();
+				player.off("stateChange", streamCallback);
+			});
 		
 		newConnection.subscribe(player);
+		player.on("stateChange", streamCallback);
 		return newConnection;
 	}
 	return connection;
 }
 
-async function startStream()
+async function playStream()
 {
-	logger.log('attempting to begin a new stream with nowPlaying of ' + nowPlaying?.title ?? 'undefined');
-	if (!nowPlaying)
-	{
-		logger.log('nowPlaying was undefined when startStream was called', WarningLevel.Error);
+	if (!nowPlaying) {
+		logger.log('nowPlaying was undefined when trying to play stream', WarningLevel.Error);
 		return;
 	}
-
-	logger.log('current progress: ' + nowPlaying.currentProgressMs ?? '0');
-
+	
 	try {
 		const { stream, type } = await demuxProbe(ytdl(nowPlaying.url, {
 			filter: "audioonly",
@@ -164,21 +163,19 @@ async function startStream()
 		logger.log('Could not start stream - something is wrong with the url checks up to this point', WarningLevel.Error);
 		return;
 	}
+}
 
-	const cb = (_: any, newStatus: { status: string; }) => {
-		if (newStatus.status === "idle") {
-			if (isReconnecting) return;
-			if (!nowPlaying)
-			{
-				logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
-			}
-			else {
-				advanceQueue();
-			}
-			player.off("stateChange", cb);
+function streamCallback(_: any, newStatus: { status: string; }) {
+	if (newStatus.status === "idle") {
+		if (isReconnecting) return;
+		if (!nowPlaying) {
+			logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
 		}
-	};
-	player.on("stateChange", cb);
+		else {
+			logger.log(`Finished playing ${nowPlaying.title}`);
+			advanceQueue();
+		}
+	}
 }
 
 // returns true if there was already a song playing (i.e. we've only added to the queue)
@@ -195,8 +192,9 @@ function playSong(song: SongQueueEntry, voiceChannel: VoiceBasedChannel) {
 		if (!connection) return;
 	
 		connection.once(VoiceConnectionStatus.Ready, async () => {
+			// await delay(500);
 			nowPlaying = song;
-			startStream();
+			playStream();
 		});
 		return false;
 	}
@@ -299,7 +297,6 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 			});
 
 			// wait for a response
-			let response;
 			try {
 				const response = await interaction.channel?.awaitMessageComponent({
 					time: 30000,
@@ -413,7 +410,7 @@ function advanceQueue(): boolean {
 	if (songQueue.length > 0)
 	{
 		nowPlaying = songQueue.shift();
-		startStream();
+		playStream();
 		return true;
 	}
 	else
