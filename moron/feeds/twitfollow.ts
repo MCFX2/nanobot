@@ -328,13 +328,14 @@ async function submitPost(tweet: Tweet, settings: FollowSettings) {
 					.setAuthor({
 						name: tweet.author.name + '(@' + tweet.author.handle + ')',
 						iconURL: tweet.author.profilePic,
-						url: tweet.postUrl.substring(0, tweet.postUrl.lastIndexOf('/')),
+						url: 'https://twitter.com/' + tweet.author.handle,
 					})
 					.setFooter({
 						text: 'Twitter',
 						iconURL: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png',
 					})
 					.setTimestamp(tweet.creationDate)
+					.setTitle('Tweet')
 					.setURL(tweet.postUrl),
 			],
 		});
