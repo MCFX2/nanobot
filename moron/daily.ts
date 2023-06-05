@@ -55,7 +55,7 @@ const jobs: Job[] = [
 	make_job('25 11 * * *', init_xkcd, check_xkcd, 'XKCD'),
 	make_job('40 7,9,18,23 * * *', init_normie, check_normie, 'normie'),
 	make_job('35 14 * * *', init_smbc, check_smbc, 'SMBC'),
-	make_job('3 * * * *', init_twitfollow, check_twitfollow, 'Twitfollow'),
+	make_job('3,33 * * * *', init_twitfollow, check_twitfollow, 'Twitfollow'),
 ];
 
 let activeJobs: cron.CronJob[] = [];
