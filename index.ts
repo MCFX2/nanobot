@@ -108,9 +108,7 @@ loadAllCommands();
 
 let modules: MoronModule[] = [
 	Reactor,
-	TwitFollow,
 	Chatty,
-	TwitFix,
 	Stars,
 	GrocheGamesRegistration,
 	Secretary
