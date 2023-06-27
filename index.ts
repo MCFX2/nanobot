@@ -22,6 +22,7 @@ import { TwitFix } from './moron/twitfix';
 import { GrocheGamesRegistration } from './moron/grochegames/registration';
 import { Error } from './moron/util';
 import { Secretary } from './moron/secretary';
+import { Storykeeper } from './moron/storykeeper';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -111,7 +112,8 @@ let modules: MoronModule[] = [
 	Chatty,
 	Stars,
 	GrocheGamesRegistration,
-	Secretary
+	Secretary,
+	Storykeeper,
 ];
 
 type InitCallback = (client: Client) => Promise<void>;
@@ -172,7 +174,7 @@ client.on('interactionCreate', async interaction => {
 		} catch (err: any) {
 			logger.log(err, WarningLevel.Error);
 			await interaction.reply({
-				content: 'There was an error while executing that command.',
+				content: 'something is FUCKED UP here, dude (internal error)',
 				ephemeral: true,
 			});
 		}
@@ -237,7 +239,26 @@ client.on('messageReactionAdd', async react => {
 				module.onReactionAdd(react as MessageReaction);
 			}
 		} catch (err: any) {
-			logger.log('Exception thrown handling reaction', WarningLevel.Error);
+			logger.log('Exception thrown handling reaction add', WarningLevel.Error);
+			logger.log(err, WarningLevel.Error);
+		}
+	});
+});
+
+client.on('messageReactionRemove', async react => {
+	if (react.me) return;
+
+	if (react.partial) {
+		react = await react.fetch();
+	}
+
+	modules.forEach(module => {
+		try {
+			if (module.onReactionRemove) {
+				module.onReactionRemove(react as MessageReaction);
+			}
+		} catch (err: any) {
+			logger.log('Exception thrown handling reaction removal', WarningLevel.Error);
 			logger.log(err, WarningLevel.Error);
 		}
 	});
