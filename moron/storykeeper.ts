@@ -1,4 +1,4 @@
-import { ChannelType, Client, Guild, MessageReaction, OverwriteType, PermissionsBitField, TextChannel } from "discord.js";
+import { ChannelType, Client, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel } from "discord.js";
 import { MoronModule } from "./moronmodule";
 import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
 import * as grocheChannels from '../groche-channels.json';
@@ -26,10 +26,41 @@ export const Storykeeper: MoronModule = {
 	onInit: storykeeper_init,
 	onReactionAdd: storykeeper_react,
 	onReactionRemove: storykeeper_react,
+	onMessageSend: storykeeper_msg,
 }
 
 let clientInstance: Client;
 let guild: Guild;
+
+// structure containing the raw data needed to construct a submission
+interface StorySubmission {
+	userId: string; // for linking together submissions from the same user
+	msgId: string; // we don't actually store the message, just the ID. this gives us support for editing messages
+
+	attachments?: string[]; // todo
+	nextMsg?: StorySubmission; // todo
+}
+
+let pendingSubmissions: StorySubmission[] = [];
+
+// constructed submission
+interface StoryEntry {
+	submission: StorySubmission;
+
+	content: string[];
+	username: string;
+	userAvatar: string;
+	attachments?: string[][]; // todo
+	title?: string; // todo
+}
+
+function loadSubmissions() {
+	pendingSubmissions = readCacheFileAsJson('storykeeper-submissions.json') ?? [];
+}
+
+function saveSubmissions() {
+	writeCacheFileAsJson('storykeeper-submissions.json', pendingSubmissions);
+}
 
 // makes a new channel with the given title, and returns its ID
 async function generateChannel(label: string): Promise<TextChannel> {
@@ -50,7 +81,86 @@ async function generateChannel(label: string): Promise<TextChannel> {
 	return newChannel;
 }
 
+async function getAllEntrants(): Promise<GuildMember[]>
+{
+	const role = await guild.roles.fetch(config.accessRoleId);
+	if (!role)
+	{
+		logger.log('Could not find access role', WarningLevel.Error);
+		return [];
+	}
+
+	const results: Promise<GuildMember>[] = [];
+	role.members.forEach(member => {
+		results.push(member.fetch());
+	});
+
+	return await Promise.all(results);
+}
+
+async function storykeeper_msg(msg: Message) {
+	if (msg.channel.isDMBased())
+	{
+		logger.log(msg.content, WarningLevel.Notice);
+		const entrants = await getAllEntrants();
+		
+		const member = entrants.find(member => member.id === msg.author.id);
+
+		if (!member)
+		{
+			msg.reply('hey buddy. you are not part of the storykeeper system. you need to react to the role in game groches. mommy is not going to talk to you until you do uwu');
+			return;
+		}
+
+		if (msg.attachments.size > 0)
+		{
+			msg.channel.send('just a heads up, your message includes attachments. they will not be included in your submission.');
+		}
+
+		// see if there's an existing submission from this user to append
+		const existingSubmission = pendingSubmissions.findIndex(submission => submission.userId === msg.author.id);
+		if (existingSubmission === -1) {
+			pendingSubmissions.push({
+				userId: msg.author.id,
+				msgId: msg.id,
+			});
+			saveSubmissions();
+			msg.react('✅');
+			return;
+		}
+
+		let curSubmission = pendingSubmissions[existingSubmission];
+		// find the last message in the chain
+		while (curSubmission.nextMsg)
+		{
+			curSubmission = curSubmission.nextMsg;
+		}
+
+		curSubmission.nextMsg = {
+			userId: msg.author.id,
+			msgId: msg.id,
+		}
+
+		msg.react('✅');
+		saveSubmissions();
+	}
+}
+
 async function storykeeper_init(client: Client) {
+	// temporary
+
+	/* const channel = await client.channels.fetch('1123271809442258994') as TextBasedChannel;
+	const msg2 = await channel.messages.fetch('1123271813359738922');
+	msg2.edit('NOTE, there are currently (for now) some technical limitations for submissions. these limitations are:\n'
+	+ '- submissions can\'t contain images*\n'
+	+ '- submissions can\'t contain any other embeds\n'
+	+ '- links will not function (correctly)*\n'
+	+ '- some formatting may not work or may display differently compared to your submission. particularly, code blocks do not work\n'
+	+ 'generally my advice is just avoid doing anything fancy and you should be fine. focus on putting some good words in there\n\n'
+	+ '\\**there are plans to remove these limitations in the future, but for now you will have to work around them.*')
+	*/
+
+
 	clientInstance = client;
 	const guilds = await client.guilds.fetch();
 	const guildFound = guilds.find(guild => guild.id === grocheChannels.guild);
@@ -63,6 +173,7 @@ async function storykeeper_init(client: Client) {
 		guild = await guildFound.fetch();
 	}
 
+	loadSubmissions();
 
 	// set up channels and roles if needed
 	config = readCacheFileAsJson('storykeeper-config.json');
@@ -103,11 +214,9 @@ async function storykeeper_init(client: Client) {
 		
 		await newChannels[0].send(
 			'NOTE, there are currently (for now) some technical limitations for submissions. these limitations are:\n'
-			+ '- submissions must be a single message*\n'
 			+ '- submissions can\'t contain images*\n'
 			+ '- submissions can\'t contain any other embeds\n'
 			+ '- links will not function (correctly)*\n'
-			+ '- if you have nitro and use the feature to send messages longer than 2000 characters, the bot will break*\n'
 			+ '- some formatting may not work or may display differently compared to your submission. particularly, code blocks do not work\n'
 			+ 'generally my advice is just avoid doing anything fancy and you should be fine. focus on putting some good words in there\n\n'
 			+ '* *there are plans to remove these limitations in the future, but for now you will have to work around them.*'
@@ -115,7 +224,7 @@ async function storykeeper_init(client: Client) {
 
 		await newChannels[0].send('** How to submit:**\n'
 			+ ' 1. DM me (gaming moron) with your submission.'
-			+ ' 2. i will reply confirming that your submission was accepted.\n'
+			+ ' 2. i will react confirming that your submission was accepted.\n'
 			+ 'thats literally it. thats all you have to do. some other notes, however:\n'
 			+ '- you can submit at any time during the week, but submissions will be closed at 6PM GMT (gaming moron time, also known as PST) on Saturday\n'
 			+ '- submissions will be posted on Sunday, at 6PM\n'

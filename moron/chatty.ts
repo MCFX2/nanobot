@@ -283,6 +283,10 @@ async function chatty_onMessageSend(msg: Message) {
 		if (!msg.mentions.has(client.user) && Math.random() > 0.05) {
 			return;
 		}
+
+		if (msg.channel.isDMBased()) {
+			return; // avoid colliding with storykeeper
+		}
 	}
 
 	if (
@@ -454,7 +458,23 @@ async function chatty_onMessageSend(msg: Message) {
 		)
 	) {
 		return;
-	} else if (msg.content.length > 140) {
+	} else if (msg.content.length > 1000) {
+		basicReplyFunction([
+			'broo thats so many words',
+			'jesse what the fuck are you talking about',
+			'id put that on my tombstone but it wouldnt fit. it would probably fit on your moms though',
+			'i think i understood the first couple of words',
+			'https://tenor.com/view/talking-old-weird-crazy-mocking-gif-16113842',
+			'too long, did read',
+			'please, continue',
+			'have you considered getting into creative writing',
+			'i dont actually have enough RAM to store this message',
+			'i asked chatgpt to respond to this for me but it said token limit exceeded',
+			'say that again but in pirate speak',
+			'https://tenor.com/view/subway-surfer-gif-6241925',
+		])(msg);
+	}
+	else if (msg.content.length > 200) {
 		basicReplyFunction([
 			'thats a lotta words',
 			'tldr',
