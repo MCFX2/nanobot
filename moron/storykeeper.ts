@@ -1,4 +1,4 @@
-import { ChannelType, Client, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel } from "discord.js";
+import { ChannelType, ChatInputCommandInteraction, Client, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel } from "discord.js";
 import { MoronModule } from "./moronmodule";
 import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
 import * as grocheChannels from '../groche-channels.json';
@@ -43,10 +43,10 @@ interface StorySubmission {
 
 let pendingSubmissions: StorySubmission[] = [];
 
+let prompts: string[] = [];
+
 // constructed submission
 interface StoryEntry {
-	submission: StorySubmission;
-
 	content: string[];
 	username: string;
 	userAvatar: string;
@@ -60,6 +60,14 @@ function loadSubmissions() {
 
 function saveSubmissions() {
 	writeCacheFileAsJson('storykeeper-submissions.json', pendingSubmissions);
+}
+
+function loadPrompts() {
+	prompts = readCacheFileAsJson('storykeeper-prompts.json') ?? [];
+}
+
+function savePrompts() {
+	writeCacheFileAsJson('storykeeper-prompts.json', prompts);
 }
 
 // makes a new channel with the given title, and returns its ID
@@ -96,6 +104,55 @@ async function getAllEntrants(): Promise<GuildMember[]>
 	});
 
 	return await Promise.all(results);
+}
+
+async function getMessageContent(submission: StorySubmission): Promise<StoryEntry>
+{
+	let submissions: StorySubmission[] = [submission];
+	while (submission.nextMsg)
+	{
+		submissions.push(submission.nextMsg);
+		submission = submission.nextMsg;
+	}
+
+	let content: string[] = [];
+	let attachments: string[][] = [];
+	const channel = await clientInstance.channels.fetch(submission.userId) as TextBasedChannel;
+
+	for (const item of submissions)
+	{
+		const msg = await channel.messages.fetch(item.msgId);
+		if (msg)
+		{
+			content.push(msg.content);
+			attachments.push(msg.attachments.map(attachment => attachment.url));
+		}
+	}
+
+	const guildUser = await guild.members.fetch({ user: submission.userId });
+
+	return {
+		content: content,
+		username: guildUser.displayName,
+		userAvatar: guildUser.user.avatarURL() ?? '',
+		attachments: attachments,
+	}
+}
+
+export function storykeeper_addPrompt(interact: ChatInputCommandInteraction)
+{
+	const prompt = interact.options.getString('prompt');
+
+	if (!prompt)
+	{
+		interact.reply('you need to provide a prompt, you absolute buffoon');
+		return;
+	}
+
+	prompts.push(prompt);
+	savePrompts();
+
+	interact.reply('i have added the prompt, master');
 }
 
 async function storykeeper_msg(msg: Message) {
@@ -174,6 +231,7 @@ async function storykeeper_init(client: Client) {
 	}
 
 	loadSubmissions();
+	loadPrompts();
 
 	// set up channels and roles if needed
 	config = readCacheFileAsJson('storykeeper-config.json');
