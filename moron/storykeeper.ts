@@ -1,4 +1,4 @@
-import { ChannelType, ChatInputCommandInteraction, Client, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel } from "discord.js";
+import { ChannelType, ChatInputCommandInteraction, Client, Embed, EmbedBuilder, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel, User } from "discord.js";
 import { MoronModule } from "./moronmodule";
 import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
 import * as grocheChannels from '../groche-channels.json';
@@ -17,7 +17,13 @@ interface StorykeeperConfig {
 	featureOptInMessage: string;
 }
 
+interface StorykeeperStatus {
+	submissionsOpen: boolean;
+	submissionVoting: boolean;
+}
+
 let config: StorykeeperConfig;
+let status: StorykeeperStatus;
 
 const logger: Logger = new Logger('storykeeper', WarningLevel.Notice);
 
@@ -25,7 +31,7 @@ export const Storykeeper: MoronModule = {
 	name: "storykeeper",
 	onInit: storykeeper_init,
 	onReactionAdd: storykeeper_react,
-	onReactionRemove: storykeeper_react,
+	onReactionRemove: storykeeper_unreact,
 	onMessageSend: storykeeper_msg,
 }
 
@@ -68,6 +74,20 @@ function loadPrompts() {
 
 function savePrompts() {
 	writeCacheFileAsJson('storykeeper-prompts.json', prompts);
+}
+
+function loadStatus() {
+	status = readCacheFileAsJson('storykeeper-status.json');
+	if(!status) {
+		status = {
+			submissionsOpen: false,
+			submissionVoting: false,
+		};
+	}
+}
+
+function saveStatus() {
+	writeCacheFileAsJson('storykeeper-status.json', status);
 }
 
 // makes a new channel with the given title, and returns its ID
@@ -117,7 +137,8 @@ async function getMessageContent(submission: StorySubmission): Promise<StoryEntr
 
 	let content: string[] = [];
 	let attachments: string[][] = [];
-	const channel = await clientInstance.channels.fetch(submission.userId) as TextBasedChannel;
+	const user = await guild.members.fetch(submission.userId);
+	const channel = await user.createDM();
 
 	for (const item of submissions)
 	{
@@ -139,6 +160,177 @@ async function getMessageContent(submission: StorySubmission): Promise<StoryEntr
 	}
 }
 
+export async function storykeeper_postPrompt()
+{
+	const archiveChannel = await guild.channels.fetch(config.archiveChannelId) as TextChannel;
+
+	const prompt = prompts.splice(Math.floor(Math.random() * prompts.length), 1)[0];
+
+	if (!prompt)
+	{
+		archiveChannel.send('no prompts available. please add some. storykeeper cancelled this week.');
+		return;
+	}
+
+	archiveChannel.send({
+		content: '<@&' + config.accessRoleId + '>',
+		embeds: [new EmbedBuilder()
+			.setTitle('Weekly Prompt')
+			.setDescription(prompt)
+			.setTimestamp(Date.now())]
+	});
+
+	savePrompts();
+	status.submissionsOpen = true;
+	saveStatus();
+}
+
+export async function storykeeper_closeSubmissions()
+{
+	// pull in all the submissions so we can get ready to post them tomorrow
+	const submissions: StoryEntry[] = [];
+	for (const submission of pendingSubmissions)
+	{
+		submissions.push(await getMessageContent(submission));
+	}
+
+	if (submissions.length <= 2) {
+		const archiveChannel = await guild.channels.fetch(config.archiveChannelId) as TextChannel;
+		archiveChannel.send('not enough submissions. only got ' + submissions.length + '. storykeeper cancelled this week.');
+		status.submissionsOpen = false;
+		return;
+	}
+
+	writeCacheFileAsJson('storykeeper-entries.json', submissions);
+
+	status.submissionsOpen = false;
+	saveStatus();
+}
+
+export async function storykeeper_postReminder()
+{
+	const storytellers = await getAllEntrants();
+
+	for(const storyteller of storytellers)
+	{
+		storyteller.send('reminder: submissions close in 6 hours. get your submission in and finalized if you haven\'t already.' + (pendingSubmissions.length > 2 ? ''
+			: ('\nFYI if we do not get at least ' + (3 - pendingSubmissions.length) + ' more submissions, this week\'s prompt will be cancelled.')));
+	}
+}
+
+let voteMsgs: string[] = [];
+
+export async function storykeeper_startVoting()
+{
+	status.submissionVoting = true;
+	saveStatus();
+
+	const subChannel = await guild.channels.fetch(config.submissionChannelId) as TextChannel;
+
+	const entries: StoryEntry[] = readCacheFileAsJson('storykeeper-entries.json') ?? [];
+
+	if (entries.length <= 2)
+	{
+		return;
+	}
+
+	await subChannel.send({
+		content: '<@&' + config.accessRoleId + '> ENTRIES LIVE. VOTE NOW.',
+	});
+
+	voteMsgs = [];
+
+	for (const entry of entries)
+	{
+		if (entry.content.length > 1)
+		{
+			let embeds: EmbedBuilder[] = [];
+			for(const content of entry.content)
+			{
+				embeds.push(new EmbedBuilder()
+					.setDescription(content)
+					.setTimestamp(Date.now()));
+			}
+
+			embeds[0] = embeds[0].setAuthor({
+				name: entry.username,
+				iconURL: entry.userAvatar,
+			})
+
+			const msg = await subChannel.send({ embeds: embeds });
+			voteMsgs.push(msg.id);
+			msg.react('🔼');
+		}
+		else
+		{
+			const msg = await subChannel.send({
+				embeds: [new EmbedBuilder()
+					.setAuthor({
+						name: entry.username,
+						iconURL: entry.userAvatar,
+					})
+					.setDescription(entry.content[0])
+					.setTimestamp(Date.now())]
+			});
+
+			voteMsgs.push(msg.id);
+			msg.react('🔼');
+		}
+	}
+
+	writeCacheFileAsJson('storykeeper-votes.json', voteMsgs);
+}
+
+export async function storykeeper_finalizeVoting()
+{
+	if (!status.submissionVoting)
+	{
+		return;
+	}
+	status.submissionVoting = false;
+	saveStatus();
+
+	const messages: Message[] = [];
+	const channel = await clientInstance.channels.fetch(config.submissionChannelId) as TextChannel;
+	for (const msgId of voteMsgs)
+	{
+		const msg = await channel.messages.fetch(msgId);
+		if (msg)
+		{
+			messages.push(msg);
+		}
+	}
+
+	const subs: EmbedBuilder[][] = [];
+	const votes: number[] = [];
+	messages.forEach(msg => {
+		const newEmbeds: EmbedBuilder[] = [];
+		msg.embeds.forEach(embed => {
+			newEmbeds.push(new EmbedBuilder(embed.data));
+		});
+		subs.push(newEmbeds);
+		votes.push((msg.reactions.resolve('🔼')?.count ?? 1) - 1);
+		msg.delete();
+	});
+
+	const archiveChannel = await clientInstance.channels.fetch(config.archiveChannelId) as TextChannel;
+	
+	for(let i = 0; i < subs.length; i++)
+	{
+		const embeds = subs[i];
+
+		embeds[0] = embeds[0].setFooter({
+			text: '+' + votes[i]
+		});
+
+		archiveChannel.send({ embeds: embeds });
+	}
+
+	// clear the vote cache
+	voteMsgs = [];
+	writeCacheFileAsJson('storykeeper-votes.json', voteMsgs);
+}
+
 export function storykeeper_addPrompt(interact: ChatInputCommandInteraction)
 {
 	const prompt = interact.options.getString('prompt');
@@ -158,7 +350,6 @@ export function storykeeper_addPrompt(interact: ChatInputCommandInteraction)
 async function storykeeper_msg(msg: Message) {
 	if (msg.channel.isDMBased())
 	{
-		logger.log(msg.content, WarningLevel.Notice);
 		const entrants = await getAllEntrants();
 		
 		const member = entrants.find(member => member.id === msg.author.id);
@@ -166,6 +357,12 @@ async function storykeeper_msg(msg: Message) {
 		if (!member)
 		{
 			msg.reply('hey buddy. you are not part of the storykeeper system. you need to react to the role in game groches. mommy is not going to talk to you until you do uwu');
+			return;
+		}
+
+		if (!status.submissionsOpen)
+		{
+			msg.reply('submissions are not open right now. wait until the next prompt is posted in the storykeeper-archive channel.');
 			return;
 		}
 
@@ -232,6 +429,8 @@ async function storykeeper_init(client: Client) {
 
 	loadSubmissions();
 	loadPrompts();
+	loadStatus();
+	voteMsgs = readCacheFileAsJson('storykeeper-votes.json') ?? [];
 
 	// set up channels and roles if needed
 	config = readCacheFileAsJson('storykeeper-config.json');
@@ -318,7 +517,7 @@ async function storykeeper_init(client: Client) {
 	}
 }
 
-async function storykeeper_react(react: MessageReaction)
+async function updateRole(react: MessageReaction)
 {
 	// jii emote id is 858718630874447893
 	if (react.message.id !== config.featureOptInMessage || react.emoji.id !== '858718630874447893')
@@ -350,4 +549,40 @@ async function storykeeper_react(react: MessageReaction)
 			}
 		}
 	}
+}
+
+async function storykeeper_react(react: MessageReaction, user: User)
+{
+	if (status.submissionVoting)
+	{
+		if(voteMsgs.includes(react.message.id) && react.emoji.name === '🔼')
+		{
+			// only allow user to vote for one submission
+			const messageCandidates = [];
+			for (const sub in voteMsgs) {
+				const message = await react.message.channel.messages.fetch(sub);
+				if (message)
+				{
+					messageCandidates.push(message);
+				}
+			}
+
+			for (const message of messageCandidates) {
+				if (message.id !== react.message.id) continue;
+				// remove all other reactions by this user
+				const reactions = message.reactions.resolve('🔼');
+				if (reactions)
+				{
+					reactions.users.remove(user.id);
+				}
+			}
+		}
+	}
+
+	updateRole(react);
+}
+
+async function storykeeper_unreact(react: MessageReaction)
+{
+	updateRole(react);
 }

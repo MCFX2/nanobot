@@ -5,6 +5,7 @@ import * as cron from 'cron';
 import { check_normie, init_normie } from './feeds/normie';
 import { check_smbc, init_smbc } from './feeds/smbc';
 import { check_twitfollow, init_twitfollow } from './feeds/twitfollow';
+import { storykeeper_closeSubmissions, storykeeper_finalizeVoting, storykeeper_postPrompt, storykeeper_postReminder, storykeeper_startVoting } from './storykeeper';
 
 let client: Client;
 
@@ -55,6 +56,12 @@ const jobs: Job[] = [
 	make_job('25 11 * * *', init_xkcd, check_xkcd, 'XKCD'),
 	make_job('40 7,23 * * *', init_normie, check_normie, 'normie'),
 	make_job('35 14 * * *', init_smbc, check_smbc, 'SMBC'),
+	// run storykeeper every Monday at 6PM
+	make_job('0 18 * * 1', () => { }, storykeeper_postPrompt, 'storykeeper-postPrompt'),
+	make_job('0 12 * * 6', () => { }, storykeeper_postReminder, 'storykeeper-postReminder'),
+	make_job('0 18 * * 6', () => { }, storykeeper_closeSubmissions, 'storykeeper-closeSubmissions'),
+	make_job('0 18 * * 0', () => { }, storykeeper_startVoting, 'storykeeper-startVoting'),
+	make_job('0 18 * * 2', () => { }, storykeeper_finalizeVoting, 'storykeeper-finalizeVotes'),
 ];
 
 let activeJobs: cron.CronJob[] = [];

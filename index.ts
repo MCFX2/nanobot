@@ -7,6 +7,7 @@ import {
 	MessageReaction,
 	Partials,
 	SlashCommandBuilder,
+	User,
 } from 'discord.js';
 import { token } from './tokens.json';
 import { Logger, WarningLevel } from './moron/logger';
@@ -228,17 +229,22 @@ client.on('messageCreate', async msg => {
 /// reactions
 ///
 
-client.on('messageReactionAdd', async react => {
+client.on('messageReactionAdd', async (react, user) => {
 	if (react.me) return;
 
 	if (react.partial) {
 		react = await react.fetch();
 	}
 
+	if (user.partial)
+	{
+		user = await user.fetch();
+	}
+
 	modules.forEach(module => {
 		try {
 			if (module.onReactionAdd) {
-				module.onReactionAdd(react as MessageReaction);
+				module.onReactionAdd(react as MessageReaction, user as User);
 			}
 		} catch (err: any) {
 			logger.log('Exception thrown handling reaction add', WarningLevel.Error);
