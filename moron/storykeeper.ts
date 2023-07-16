@@ -187,6 +187,7 @@ export async function storykeeper_postPrompt()
 
 export async function storykeeper_closeSubmissions()
 {
+	if(!status.submissionsOpen) return;
 	// pull in all the submissions so we can get ready to post them tomorrow
 	const submissions: StoryEntry[] = [];
 	for (const submission of pendingSubmissions)
@@ -209,6 +210,8 @@ export async function storykeeper_closeSubmissions()
 
 export async function storykeeper_postReminder()
 {
+	if (!status.submissionsOpen) return;
+	
 	const storytellers = await getAllEntrants();
 
 	for(const storyteller of storytellers)
