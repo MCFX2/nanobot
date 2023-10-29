@@ -58,7 +58,7 @@ const jobs: Job[] = [
 	make_job('35 14 * * *', init_smbc, check_smbc, 'SMBC'),
 	// run storykeeper every Monday at 6PM
 	make_job('0 18 * * 1', () => { }, storykeeper_postPrompt, 'storykeeper-postPrompt'),
-	make_job('0 12 * * 6', () => { }, storykeeper_postReminder, 'storykeeper-postReminder'),
+	make_job('0 6 * * 6', () => { }, storykeeper_postReminder, 'storykeeper-postReminder'),
 	make_job('0 18 * * 6', () => { }, storykeeper_closeSubmissions, 'storykeeper-closeSubmissions'),
 	make_job('0 18 * * 0', () => { }, storykeeper_startVoting, 'storykeeper-startVoting'),
 	make_job('0 18 * * 2', () => { }, storykeeper_finalizeVoting, 'storykeeper-finalizeVotes'),

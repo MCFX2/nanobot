@@ -1,8 +1,23 @@
-import { ChannelType, ChatInputCommandInteraction, Client, Embed, EmbedBuilder, Guild, GuildMember, Message, MessageReaction, OverwriteType, PermissionsBitField, TextBasedChannel, TextChannel, User } from "discord.js";
-import { MoronModule } from "./moronmodule";
-import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
+import {
+	ChannelType,
+	ChatInputCommandInteraction,
+	Client,
+	Embed,
+	EmbedBuilder,
+	Guild,
+	GuildMember,
+	Message,
+	MessageReaction,
+	OverwriteType,
+	PermissionsBitField,
+	TextBasedChannel,
+	TextChannel,
+	User,
+} from 'discord.js';
+import { MoronModule } from './moronmodule';
+import { readCacheFileAsJson, writeCacheFileAsJson } from './util';
 import * as grocheChannels from '../groche-channels.json';
-import { Logger, WarningLevel } from "./logger";
+import { Logger, WarningLevel } from './logger';
 
 interface StorykeeperConfig {
 	// the role that provides access to the storykeeper system
@@ -28,12 +43,12 @@ let status: StorykeeperStatus;
 const logger: Logger = new Logger('storykeeper', WarningLevel.Notice);
 
 export const Storykeeper: MoronModule = {
-	name: "storykeeper",
+	name: 'storykeeper',
 	onInit: storykeeper_init,
 	onReactionAdd: storykeeper_react,
 	onReactionRemove: storykeeper_unreact,
 	onMessageSend: storykeeper_msg,
-}
+};
 
 let clientInstance: Client;
 let guild: Guild;
@@ -61,7 +76,8 @@ interface StoryEntry {
 }
 
 function loadSubmissions() {
-	pendingSubmissions = readCacheFileAsJson('storykeeper-submissions.json') ?? [];
+	pendingSubmissions =
+		readCacheFileAsJson('storykeeper-submissions.json') ?? [];
 }
 
 function saveSubmissions() {
@@ -78,7 +94,7 @@ function savePrompts() {
 
 function loadStatus() {
 	status = readCacheFileAsJson('storykeeper-status.json');
-	if(!status) {
+	if (!status) {
 		status = {
 			submissionsOpen: false,
 			submissionVoting: false,
@@ -103,17 +119,14 @@ async function generateChannel(label: string): Promise<TextChannel> {
 
 	newChannel.permissionOverwrites.edit(guild.roles.everyone, {
 		ViewChannel: false,
-	}
-	);
+	});
 
 	return newChannel;
 }
 
-async function getAllEntrants(): Promise<GuildMember[]>
-{
+async function getAllEntrants(): Promise<GuildMember[]> {
 	const role = await guild.roles.fetch(config.accessRoleId);
-	if (!role)
-	{
+	if (!role) {
 		logger.log('Could not find access role', WarningLevel.Error);
 		return [];
 	}
@@ -126,11 +139,11 @@ async function getAllEntrants(): Promise<GuildMember[]>
 	return await Promise.all(results);
 }
 
-async function getMessageContent(submission: StorySubmission): Promise<StoryEntry>
-{
+async function getMessageContent(
+	submission: StorySubmission,
+): Promise<StoryEntry> {
 	let submissions: StorySubmission[] = [submission];
-	while (submission.nextMsg)
-	{
+	while (submission.nextMsg) {
 		submissions.push(submission.nextMsg);
 		submission = submission.nextMsg;
 	}
@@ -140,11 +153,9 @@ async function getMessageContent(submission: StorySubmission): Promise<StoryEntr
 	const user = await guild.members.fetch(submission.userId);
 	const channel = await user.createDM();
 
-	for (const item of submissions)
-	{
+	for (const item of submissions) {
 		const msg = await channel.messages.fetch(item.msgId);
-		if (msg)
-		{
+		if (msg) {
 			content.push(msg.content);
 			attachments.push(msg.attachments.map(attachment => attachment.url));
 		}
@@ -157,27 +168,34 @@ async function getMessageContent(submission: StorySubmission): Promise<StoryEntr
 		username: guildUser.displayName,
 		userAvatar: guildUser.user.avatarURL() ?? '',
 		attachments: attachments,
-	}
+	};
 }
 
-export async function storykeeper_postPrompt()
-{
-	const archiveChannel = await guild.channels.fetch(config.archiveChannelId) as TextChannel;
+export async function storykeeper_postPrompt() {
+	const archiveChannel = (await guild.channels.fetch(
+		config.archiveChannelId,
+	)) as TextChannel;
 
-	const prompt = prompts.splice(Math.floor(Math.random() * prompts.length), 1)[0];
+	const prompt = prompts.splice(
+		Math.floor(Math.random() * prompts.length),
+		1,
+	)[0];
 
-	if (!prompt)
-	{
-		archiveChannel.send('no prompts available. please add some. storykeeper cancelled this week.');
+	if (!prompt) {
+		archiveChannel.send(
+			'no prompts available. please add some. storykeeper cancelled this week.',
+		);
 		return;
 	}
 
 	archiveChannel.send({
 		content: '<@&' + config.accessRoleId + '>',
-		embeds: [new EmbedBuilder()
-			.setTitle('Weekly Prompt')
-			.setDescription(prompt)
-			.setTimestamp(Date.now())]
+		embeds: [
+			new EmbedBuilder()
+				.setTitle('Weekly Prompt')
+				.setDescription(prompt)
+				.setTimestamp(Date.now()),
+		],
 	});
 
 	savePrompts();
@@ -185,121 +203,119 @@ export async function storykeeper_postPrompt()
 	saveStatus();
 }
 
-export async function storykeeper_closeSubmissions()
-{
-	if(!status.submissionsOpen) return;
+export async function storykeeper_closeSubmissions() {
+	if (!status.submissionsOpen) return;
 	// pull in all the submissions so we can get ready to post them tomorrow
 	const submissions: StoryEntry[] = [];
-	for (const submission of pendingSubmissions)
-	{
+	for (const submission of pendingSubmissions) {
 		submissions.push(await getMessageContent(submission));
 	}
 
 	if (submissions.length <= 2) {
-		const archiveChannel = await guild.channels.fetch(config.archiveChannelId) as TextChannel;
-		archiveChannel.send('not enough submissions. only got ' + submissions.length + '. storykeeper cancelled this week.');
+		const archiveChannel = (await guild.channels.fetch(
+			config.archiveChannelId,
+		)) as TextChannel;
+		archiveChannel.send(
+			'not enough submissions. only got ' +
+				submissions.length +
+				'. storykeeper cancelled this week.',
+		);
 		status.submissionsOpen = false;
 		return;
 	}
 
 	writeCacheFileAsJson('storykeeper-entries.json', submissions);
 
+	pendingSubmissions.length = 0;
+	saveSubmissions();
+
 	status.submissionsOpen = false;
 	saveStatus();
 }
 
-export async function storykeeper_postReminder()
-{
+export async function storykeeper_postReminder() {
 	if (!status.submissionsOpen) return;
-	
+
 	const storytellers = await getAllEntrants();
 
-	for(const storyteller of storytellers)
-	{
-		storyteller.send('reminder: submissions close in 6 hours. get your submission in and finalized if you haven\'t already.' + (pendingSubmissions.length > 2 ? ''
-			: ('\nFYI if we do not get at least ' + (3 - pendingSubmissions.length) + ' more submissions, this week\'s prompt will be cancelled.')));
+	for (const storyteller of storytellers) {
+		storyteller.send(
+			"reminder: submissions close in 12 hours. get your submission in and finalized if you haven't already." +
+				(pendingSubmissions.length > 2
+					? ''
+					: '\nFYI if we do not get at least ' +
+					  (3 - pendingSubmissions.length) +
+					  " more submissions, this week's prompt will be cancelled."),
+		);
 	}
 }
 
 let voteMsgs: string[] = [];
 
-export async function storykeeper_startVoting()
-{
+export async function storykeeper_startVoting() {
 	status.submissionVoting = true;
 	saveStatus();
 
-	const subChannel = await guild.channels.fetch(config.submissionChannelId) as TextChannel;
+	const subChannel = (await guild.channels.fetch(
+		config.submissionChannelId,
+	)) as TextChannel;
 
-	const entries: StoryEntry[] = readCacheFileAsJson('storykeeper-entries.json') ?? [];
+	const entries: StoryEntry[] =
+		readCacheFileAsJson('storykeeper-entries.json') ?? [];
 
-	if (entries.length <= 2)
-	{
+	writeCacheFileAsJson('storykeeper-entries.json', []);
+
+	if (entries.length <= 2) {
 		return;
 	}
 
 	await subChannel.send({
-		content: '<@&' + config.accessRoleId + '> ENTRIES LIVE. VOTE NOW.',
+		content:
+			'<@&' +
+			config.accessRoleId +
+			'> Come see the lovely submissions this week:',
 	});
 
 	voteMsgs = [];
 
-	for (const entry of entries)
-	{
-		if (entry.content.length > 1)
-		{
-			let embeds: EmbedBuilder[] = [];
-			for(const content of entry.content)
-			{
-				embeds.push(new EmbedBuilder()
-					.setDescription(content)
-					.setTimestamp(Date.now()));
-			}
+	for (const entry of entries) {
+		let embeds: EmbedBuilder[] = [];
+		for (const content of entry.content) {
+			const text =
+				content !== ''
+					? content
+					: '[There was an error fetching this message- it was probably deleted]';
 
-			embeds[0] = embeds[0].setAuthor({
-				name: entry.username,
-				iconURL: entry.userAvatar,
-			})
-
-			const msg = await subChannel.send({ embeds: embeds });
-			voteMsgs.push(msg.id);
-			msg.react('🔼');
+			embeds.push(
+				new EmbedBuilder().setDescription(text).setAuthor({
+					name: entry.username,
+					iconURL: entry.userAvatar,
+				}),
+			);
 		}
-		else
-		{
-			const msg = await subChannel.send({
-				embeds: [new EmbedBuilder()
-					.setAuthor({
-						name: entry.username,
-						iconURL: entry.userAvatar,
-					})
-					.setDescription(entry.content[0])
-					.setTimestamp(Date.now())]
-			});
 
-			voteMsgs.push(msg.id);
-			msg.react('🔼');
-		}
+		const msg = await subChannel.send({ embeds: embeds });
+		voteMsgs.push(msg.id);
+		msg.react('🔼');
 	}
 
 	writeCacheFileAsJson('storykeeper-votes.json', voteMsgs);
 }
 
-export async function storykeeper_finalizeVoting()
-{
-	if (!status.submissionVoting)
-	{
+export async function storykeeper_finalizeVoting() {
+	if (!status.submissionVoting) {
 		return;
 	}
 	status.submissionVoting = false;
 	saveStatus();
 
 	const messages: Message[] = [];
-	const channel = await clientInstance.channels.fetch(config.submissionChannelId) as TextChannel;
-	for (const msgId of voteMsgs)
-	{
+	const channel = (await clientInstance.channels.fetch(
+		config.submissionChannelId,
+	)) as TextChannel;
+	for (const msgId of voteMsgs) {
 		const msg = await channel.messages.fetch(msgId);
-		if (msg)
-		{
+		if (msg) {
 			messages.push(msg);
 		}
 	}
@@ -316,14 +332,15 @@ export async function storykeeper_finalizeVoting()
 		msg.delete();
 	});
 
-	const archiveChannel = await clientInstance.channels.fetch(config.archiveChannelId) as TextChannel;
-	
-	for(let i = 0; i < subs.length; i++)
-	{
+	const archiveChannel = (await clientInstance.channels.fetch(
+		config.archiveChannelId,
+	)) as TextChannel;
+
+	for (let i = 0; i < subs.length; i++) {
 		const embeds = subs[i];
 
 		embeds[0] = embeds[0].setFooter({
-			text: '+' + votes[i]
+			text: '+' + votes[i],
 		});
 
 		archiveChannel.send({ embeds: embeds });
@@ -334,12 +351,10 @@ export async function storykeeper_finalizeVoting()
 	writeCacheFileAsJson('storykeeper-votes.json', voteMsgs);
 }
 
-export function storykeeper_addPrompt(interact: ChatInputCommandInteraction)
-{
+export function storykeeper_addPrompt(interact: ChatInputCommandInteraction) {
 	const prompt = interact.options.getString('prompt');
 
-	if (!prompt)
-	{
+	if (!prompt) {
 		interact.reply('you need to provide a prompt, you absolute buffoon');
 		return;
 	}
@@ -351,31 +366,35 @@ export function storykeeper_addPrompt(interact: ChatInputCommandInteraction)
 }
 
 async function storykeeper_msg(msg: Message) {
-	if (msg.channel.isDMBased())
-	{
+	if (msg.channel.isDMBased()) {
 		const entrants = await getAllEntrants();
-		
+
 		const member = entrants.find(member => member.id === msg.author.id);
 
-		if (!member)
-		{
-			msg.reply('hey buddy. you are not part of the storykeeper system. you need to react to the role in game groches. mommy is not going to talk to you until you do uwu');
+		if (!member) {
+			msg.reply(
+				'hey buddy. you are not part of the storykeeper system. you need to react to the role in game groches. mommy is not going to talk to you until you do uwu',
+			);
 			return;
 		}
 
-		if (!status.submissionsOpen)
-		{
-			msg.reply('submissions are not open right now. wait until the next prompt is posted in the storykeeper-archive channel.');
+		if (!status.submissionsOpen) {
+			msg.reply(
+				'submissions are not open right now. wait until the next prompt is posted in the storykeeper-archive channel.',
+			);
 			return;
 		}
 
-		if (msg.attachments.size > 0)
-		{
-			msg.channel.send('just a heads up, your message includes attachments. they will not be included in your submission.');
+		if (msg.attachments.size > 0) {
+			msg.channel.send(
+				'just a heads up, your message includes attachments. they will not be included in your submission.',
+			);
 		}
 
 		// see if there's an existing submission from this user to append
-		const existingSubmission = pendingSubmissions.findIndex(submission => submission.userId === msg.author.id);
+		const existingSubmission = pendingSubmissions.findIndex(
+			submission => submission.userId === msg.author.id,
+		);
 		if (existingSubmission === -1) {
 			pendingSubmissions.push({
 				userId: msg.author.id,
@@ -388,15 +407,14 @@ async function storykeeper_msg(msg: Message) {
 
 		let curSubmission = pendingSubmissions[existingSubmission];
 		// find the last message in the chain
-		while (curSubmission.nextMsg)
-		{
+		while (curSubmission.nextMsg) {
 			curSubmission = curSubmission.nextMsg;
 		}
 
 		curSubmission.nextMsg = {
 			userId: msg.author.id,
 			msgId: msg.id,
-		}
+		};
 
 		msg.react('✅');
 		saveSubmissions();
@@ -417,16 +435,16 @@ async function storykeeper_init(client: Client) {
 	+ '\\**there are plans to remove these limitations in the future, but for now you will have to work around them.*')
 	*/
 
-
 	clientInstance = client;
 	const guilds = await client.guilds.fetch();
 	const guildFound = guilds.find(guild => guild.id === grocheChannels.guild);
 
 	if (!guildFound) {
-		logger.log('Could not find server.. is guildID configured correctly?', WarningLevel.Error);
-	}
-	else
-	{
+		logger.log(
+			'Could not find server.. is guildID configured correctly?',
+			WarningLevel.Error,
+		);
+	} else {
 		guild = await guildFound.fetch();
 	}
 
@@ -437,16 +455,18 @@ async function storykeeper_init(client: Client) {
 
 	// set up channels and roles if needed
 	config = readCacheFileAsJson('storykeeper-config.json');
-	
-	if (!config)
-	{
-		logger.log('Storykeeper config not found, generating new config', WarningLevel.Notice);
+
+	if (!config) {
+		logger.log(
+			'Storykeeper config not found, generating new config',
+			WarningLevel.Notice,
+		);
 
 		// generate channels and roles, and config file
 		const newAccessRole = await guild.roles.create({
-			color: "DarkButNotBlack",
+			color: 'DarkButNotBlack',
 			mentionable: true,
-			name: "Storyteller",
+			name: 'Storyteller',
 		});
 
 		config = {
@@ -465,33 +485,35 @@ async function storykeeper_init(client: Client) {
 
 		config.overviewChannelId = newChannels[0].id;
 		const featureOptInMessage = await newChannels[0].send(
-			'Greetings travellers, friends, comrades, countrymen, romans, uh... gamers, and welcome to the storyteller system.\n\n'
-			+ 'This is a system meant to ~~show off~~ practice your creative writing skills, via a weekly writing prompt. '
-			+ ' if i remember\n\n' +
-			'If you would like to participate, you will have to react to this with the <:jii:858718630874447893> emote.'
-			+ ' this will give you access to the other channels, opt you into pings, and let you see past submissions.\n\n'
-			+ ' please do it.imm literallly beggininng you');
-		
-		await newChannels[0].send(
-			'NOTE, there are currently (for now) some technical limitations for submissions. these limitations are:\n'
-			+ '- submissions can\'t contain images*\n'
-			+ '- submissions can\'t contain any other embeds\n'
-			+ '- links will not function (correctly)*\n'
-			+ '- some formatting may not work or may display differently compared to your submission. particularly, code blocks do not work\n'
-			+ 'generally my advice is just avoid doing anything fancy and you should be fine. focus on putting some good words in there\n\n'
-			+ '* *there are plans to remove these limitations in the future, but for now you will have to work around them.*'
+			'Greetings travellers, friends, comrades, countrymen, romans, uh... gamers, and welcome to the storyteller system.\n\n' +
+				'This is a system meant to ~~show off~~ practice your creative writing skills, via a weekly writing prompt. ' +
+				' if i remember\n\n' +
+				'If you would like to participate, you will have to react to this with the <:jii:858718630874447893> emote.' +
+				' this will give you access to the other channels, opt you into pings, and let you see past submissions.\n\n' +
+				' please do it.imm literallly beggininng you',
 		);
 
-		await newChannels[0].send('** How to submit:**\n'
-			+ ' 1. DM me (gaming moron) with your submission.'
-			+ ' 2. i will react confirming that your submission was accepted.\n'
-			+ 'thats literally it. thats all you have to do. some other notes, however:\n'
-			+ '- you can submit at any time during the week, but submissions will be closed at 6PM GMT (gaming moron time, also known as PST) on Saturday\n'
-			+ '- submissions will be posted on Sunday, at 6PM\n'
-			+ '- if 2 or fewer submissions are entered by submission close, that week\'s prompts will be cancelled.\n'
-			+ '- there is no requirement for style, length, quality, or adherence to the prompt. just submit literally anything.\n'
-			+ '- submissions will be voted on Sunday night and winners finalized Monday afternoon.\n'
-			+ '- winners receive 1 point, unless they won last week. in that case, they can give their point to their favorite submission'
+		await newChannels[0].send(
+			'NOTE, there are currently (for now) some technical limitations for submissions. these limitations are:\n' +
+				"- submissions can't contain images*\n" +
+				"- submissions can't contain any other embeds\n" +
+				'- links will not function (correctly)*\n' +
+				'- some formatting may not work or may display differently compared to your submission. particularly, code blocks do not work\n' +
+				'generally my advice is just avoid doing anything fancy and you should be fine. focus on putting some good words in there\n\n' +
+				'* *there are plans to remove these limitations in the future, but for now you will have to work around them.*',
+		);
+
+		await newChannels[0].send(
+			'** How to submit:**\n' +
+				' 1. DM me (gaming moron) with your submission.' +
+				' 2. i will react confirming that your submission was accepted.\n' +
+				'thats literally it. thats all you have to do. some other notes, however:\n' +
+				'- you can submit at any time during the week, but submissions will be closed at 6PM GMT (gaming moron time, also known as PST) on Saturday\n' +
+				'- submissions will be posted on Sunday, at 6PM\n' +
+				"- if 2 or fewer submissions are entered by submission close, that week's prompts will be cancelled.\n" +
+				'- there is no requirement for style, length, quality, or adherence to the prompt. just submit literally anything.\n' +
+				'- submissions will be voted on Sunday night and winners finalized Monday afternoon.\n' +
+				'- winners receive 1 point, unless they won last week. in that case, they can give their point to their favorite submission',
 		);
 
 		newChannels[0].permissionOverwrites.edit(guild.roles.everyone, {
@@ -513,23 +535,25 @@ async function storykeeper_init(client: Client) {
 			ViewChannel: false,
 			SendMessages: false,
 		});
-		
+
 		writeCacheFileAsJson('storykeeper-config.json', config);
 
 		logger.log('Storykeeper config generated', WarningLevel.Notice);
 	}
 }
 
-async function updateRole(react: MessageReaction)
-{
+async function updateRole(react: MessageReaction) {
 	// jii emote id is 858718630874447893
-	if (react.message.id !== config.featureOptInMessage || react.emoji.id !== '858718630874447893')
-	{
+	if (
+		react.message.id !== config.featureOptInMessage ||
+		react.emoji.id !== '858718630874447893'
+	) {
 		return;
 	}
 
 	const users = await react.users.fetch();
-	const registeredUsers = (await guild.roles.fetch(config.accessRoleId))?.members;
+	const registeredUsers = (await guild.roles.fetch(config.accessRoleId))
+		?.members;
 	// remove all users that should no longer be registered
 	if (registeredUsers) {
 		for (const user of registeredUsers) {
@@ -545,27 +569,26 @@ async function updateRole(react: MessageReaction)
 			const member = await guild.members.fetch(user[0]);
 			if (member) {
 				await member.roles.add(config.accessRoleId);
-			} 
-			else {
-				logger.log('Could not find member \'' + user[0] + '\' that reacted to feature opt-in message',
-					WarningLevel.Warning);
+			} else {
+				logger.log(
+					"Could not find member '" +
+						user[0] +
+						"' that reacted to feature opt-in message",
+					WarningLevel.Warning,
+				);
 			}
 		}
 	}
 }
 
-async function storykeeper_react(react: MessageReaction, user: User)
-{
-	if (status.submissionVoting)
-	{
-		if(voteMsgs.includes(react.message.id) && react.emoji.name === '🔼')
-		{
+async function storykeeper_react(react: MessageReaction, user: User) {
+	if (status.submissionVoting) {
+		if (voteMsgs.includes(react.message.id) && react.emoji.name === '🔼') {
 			// only allow user to vote for one submission
 			const messageCandidates = [];
 			for (const sub in voteMsgs) {
 				const message = await react.message.channel.messages.fetch(sub);
-				if (message)
-				{
+				if (message) {
 					messageCandidates.push(message);
 				}
 			}
@@ -574,8 +597,7 @@ async function storykeeper_react(react: MessageReaction, user: User)
 				if (message.id !== react.message.id) continue;
 				// remove all other reactions by this user
 				const reactions = message.reactions.resolve('🔼');
-				if (reactions)
-				{
+				if (reactions) {
 					reactions.users.remove(user.id);
 				}
 			}
@@ -585,7 +607,6 @@ async function storykeeper_react(react: MessageReaction, user: User)
 	updateRole(react);
 }
 
-async function storykeeper_unreact(react: MessageReaction)
-{
+async function storykeeper_unreact(react: MessageReaction) {
 	updateRole(react);
 }
