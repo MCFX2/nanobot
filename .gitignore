@@ -14,3 +14,6 @@ db/
 
 *.js
 
+# linux server files
+run
+supervise/
