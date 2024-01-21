@@ -246,7 +246,15 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 			});
 
 			// for now, assume that they want the first (video) result
-			const firstVideo = (await searchResults).items.find(i => i.type === "video") as ytsr.Video;
+			const firstVideo = (await searchResults).items.find(i => i.type === "video") as ytsr.Video | undefined;
+			if (!firstVideo) {
+				interaction.reply({
+					content: ':/ that search term reminded me of something bad. sorry. im not queueing it.',
+					ephemeral: true
+				});
+				return;
+			}
+
 			url = firstVideo.url;
 		}
 	}
