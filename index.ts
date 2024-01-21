@@ -116,7 +116,7 @@ let modules: MoronModule[] = [
 	Stars,
 	GrocheGamesRegistration,
 	Secretary,
-	Storykeeper,
+//	Storykeeper,
 ];
 
 type InitCallback = (client: Client) => Promise<void>;
