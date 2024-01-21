@@ -534,8 +534,8 @@ export function nowPlayingCommand(interaction: ChatInputCommandInteraction) {
 	const songProgressSeconds = (+Date.now() - nowPlaying.timeStartedMs!) / 1000;
 
 	const progressBarSize = 25;
-	const progressBar = [...'='.repeat(progressBarSize)];
-	progressBar[Math.floor(songProgressSeconds / songLengthSeconds * progressBarSize)] = '>';
+	const progressBar = [...'-'.repeat(progressBarSize)];
+	progressBar[Math.floor(songProgressSeconds / songLengthSeconds * progressBarSize)] = 'O';
 
 	const embed = new EmbedBuilder()
 		.setTitle(nowPlaying.title)
