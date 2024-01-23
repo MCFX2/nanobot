@@ -114,8 +114,8 @@ let modules: MoronModule[] = [
 	Reactor,
 	Chatty,
 	Stars,
-	GrocheGamesRegistration,
-	Secretary,
+//	GrocheGamesRegistration,
+//	Secretary,
 //	Storykeeper,
 ];
 
