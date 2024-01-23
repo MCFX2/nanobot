@@ -680,5 +680,11 @@ export function shuffleCommand(interaction: ChatInputCommandInteraction) {
 }
 
 export function randomizeCommand(interaction: ChatInputCommandInteraction) {
-	interaction.reply({content: 'this command is not yet implemented', ephemeral: true});
+	// shuffle song queue
+	for (let i = songQueue.length - 1; i > 0; i--) 
+	{
+		const j = Math.floor(Math.random() * (i + 1));
+		[songQueue[i], songQueue[j]] = [songQueue[j], songQueue[i]];
+	}
+	interaction.reply({ content: 'song queue got shuffled already bud, go check :)', ephemeral: true });
 }
