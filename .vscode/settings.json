@@ -2,16 +2,15 @@
 	"editor.codeActionsOnSave": {
 		"source.fixAll": "explicit"
 	},
-	"eslint.validate": [
-		"typescript"
-	],
 	"files.associations": {
 		"xiosbase": "cpp"
 	},
 	"cSpell.words": [
 		"demux",
+		"fucko",
 		"highestaudio",
 		"storykeeper",
+		"trainwreck",
 		"ytdl",
 		"ytpl",
 		"ytsr"
