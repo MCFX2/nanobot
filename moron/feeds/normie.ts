@@ -55,6 +55,6 @@ export async function check_normie() {
 		);
 		// pause to avoid double-posting
 		await new Promise(resolve => setTimeout(resolve, 3000));
-		goAgain = Math.random() > 0.5;
+		goAgain = Math.random() > 0.45;
 	}
 }
