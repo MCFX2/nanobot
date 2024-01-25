@@ -1,9 +1,9 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, Client, Colors, EmbedBuilder, Guild, GuildMember, TextChannel, VoiceBasedChannel } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, Colors, EmbedBuilder, Guild, GuildMember, TextChannel, VoiceBasedChannel } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
-import { AudioPlayer, AudioPlayerIdleState, AudioPlayerStatus, NoSubscriberBehavior, StreamType, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
+import { AudioPlayer, NoSubscriberBehavior, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
-import { delay, getTimeFromSeconds, isUrlDomain } from "./util";
+import { delay, getTimeFromSeconds, isUrlDomain, readCacheFileAsJson } from "./util";
 import isUrl from "is-url";
 import ytsr from "ytsr";
 import ytpl from "ytpl";
@@ -14,6 +14,7 @@ const logger: Logger = new Logger('bard', devMode ? WarningLevel.Info : WarningL
 
 export const Bard: MoronModule = {
 	name: 'bard',
+	onInit: onInit,
 }
 
 interface SongQueueEntry {
@@ -29,6 +30,21 @@ interface SongQueueEntry {
 	currentProgressMs?: number;
 	timeStartedMs?: number;
 	playlist?: string;
+}
+
+
+// map of tags to song urls
+let savedTags = new Map<string, string[]>();
+
+async function onInit() {
+	logger.log('bard module initialized', WarningLevel.Info);
+
+	// load tags from database
+	const tagCache = readCacheFileAsJson('bard-tags.json') ?? {};
+
+	for (const tag in tagCache) {
+		savedTags.set(tag, tagCache[tag]);
+	}
 }
 
 async function SongEntryFromUrl(url: string, requestedBy: GuildMember, interactionChannel: TextChannel): Promise<SongQueueEntry | undefined>
@@ -687,4 +703,38 @@ export function randomizeCommand(interaction: ChatInputCommandInteraction) {
 		[songQueue[i], songQueue[j]] = [songQueue[j], songQueue[i]];
 	}
 	interaction.reply({ content: 'song queue got shuffled already bud, go check :)', ephemeral: true });
+}
+
+export function tagCommand(interaction: ChatInputCommandInteraction) {
+	const tag = interaction.options.getString('tag');
+
+	if (!tag) {
+		interaction.reply({ content: 'this should never happen. :|' });
+		return;
+	}
+
+	if (!nowPlaying)
+	{
+		interaction.reply({ content: 'sorry, you can only tag the current playing song for now', ephemeral: true });
+		return;
+	}
+
+	const curTag = savedTags.get(tag);
+	if (curTag)
+	{
+		if (curTag.includes(nowPlaying.url))
+		{
+			interaction.reply({ content: 'that song is already tagged with ' + tag, ephemeral: true });
+			return;
+		}
+		curTag.push(nowPlaying.url);
+		interaction.reply({ content: '✅ tagged', ephemeral: true });
+		return;
+	}
+	else
+	{
+		savedTags.set(tag, [nowPlaying.url]);
+		interaction.reply({ content: '✅ tagged', ephemeral: true });
+		return;
+	}
 }

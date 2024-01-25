@@ -24,6 +24,7 @@ import { GrocheGamesRegistration } from './moron/grochegames/registration';
 import { Error } from './moron/util';
 import { Secretary } from './moron/secretary';
 import { Storykeeper } from './moron/storykeeper';
+import { Bard } from './moron/bard';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -114,9 +115,7 @@ let modules: MoronModule[] = [
 	Reactor,
 	Chatty,
 	Stars,
-//	GrocheGamesRegistration,
-//	Secretary,
-//	Storykeeper,
+	Bard,
 ];
 
 type InitCallback = (client: Client) => Promise<void>;
