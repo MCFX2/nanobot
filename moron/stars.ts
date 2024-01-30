@@ -127,7 +127,7 @@ async function pinMessage(
 		.setDescription(msgContent)
 		.setFooter({
 			text: (reactType.id ? '' : reactType.name + ' ') + getReactText(),
-			iconURL: reactType.url ?? undefined,
+			iconURL: reactType.imageURL() ?? undefined,
 		})
 		.setTimestamp(post.createdTimestamp);
 
@@ -162,29 +162,28 @@ async function stars_onStarAdded(reaction: MessageReaction) {
 }
 
 const reactTexts = [
-	'bruh moment',
-	'why would you do this',
-	'i always knew you were like this',
-	'freakin epic',
-	'i cannot believe this',
 	'this is offensive in some countries',
 	'wowzers',
 	'gaming moment',
-	'wonder when this will show up in fortnite',
 	'hot',
-	'what is wrong with you',
 	'what',
-	'its like that one thing',
-	"remind me not to drink the tap water at jerry garcia's",
 	'i am so proud of you',
 	'put that in your pipe and smoke it',
 	"i don't get this one",
-	'if i were real this would hurt',
 	'fatherless behavior',
+	'you are a bad person',
+	'you are a good person',
+	'wholesome 100',
+	'i am going to tell my kids this was how the world ended',
+	'you are going to brazil',
+	'you are going to horny jail',
+	'you are going to jail',
+	'been there, done that',
+	'can u xplain',
 ];
 
 function getReactText() {
-	return devMode || Math.random() > 0.5
+	return devMode || Math.random() > 0.6
 		? reactTexts[Math.floor(Math.random() * reactTexts.length)]
 		: ' ';
 }
