@@ -327,7 +327,7 @@ async function optionalPlaylistPrompt(
 	}
 
 	if (response.customId === 'addPlaylist') {
-		tryQueuePlaylist(playlistId, interaction, voiceChannel);
+		tryQueuePlaylist(playlistId, response as ChatInputCommandInteraction | ButtonInteraction, voiceChannel);
 		return;
 	} else if (response.customId === 'addSong') {
 		response.deferReply();
