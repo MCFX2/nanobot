@@ -1,9 +1,9 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, Colors, EmbedBuilder, Guild, GuildMember, TextChannel, VoiceBasedChannel } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Colors, EmbedBuilder, Guild, GuildMember, Interaction, TextChannel, VoiceBasedChannel } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
 import { AudioPlayer, NoSubscriberBehavior, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
-import { delay, getTimeFromSeconds, isUrlDomain, readCacheFileAsJson } from "./util";
+import { delay, getTimeFromSeconds, isUrlDomain, readCacheFileAsJson, respond } from "./util";
 import isUrl from "is-url";
 import ytsr from "ytsr";
 import ytpl from "ytpl";
@@ -216,6 +216,161 @@ function playSong(song: SongQueueEntry, voiceChannel: VoiceBasedChannel) {
 	}
 }
 
+async function tryPlaySong(interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>, songId: string, voiceChannel: VoiceBasedChannel) {
+	const songEntry = await SongEntryFromUrl(songId, interaction.member as GuildMember, interaction.channel as TextChannel);
+	if (!songEntry) {
+		return respond(interaction, '(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
+	}
+	if (playSong(songEntry, voiceChannel)) {
+		return respond(interaction, songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
+	}
+	else {
+		return respond(interaction, 'okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
+	}
+}
+
+async function tryQueuePlaylist(playlistId: string, interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>, voiceChannel: VoiceBasedChannel, playlistItems: ytpl.Result | undefined = undefined) {
+	// Queuing a playlist could take a while, so we should defer the reply
+	interaction.deferReply();
+
+	if (!playlistItems) {
+		playlistItems = await (ytpl(playlistId, {
+			limit: Infinity,
+			pages: Infinity
+		})).catch((e: any) => {
+			respond(interaction, 'i couldn\'t get the playlist. it\'s probably private or something. i don\'t know. i\'m just a bot. i don\'t know anything.', true);
+			return undefined;
+		});
+	}
+
+	if (!playlistItems) {
+		return;
+	}
+
+	const oldQueueLength = songQueue.length;
+	const startedEmpty = !nowPlaying;
+	const member = interaction.member as GuildMember;
+
+	let failedItems = 0;
+	let actualItems = 0;
+	for (const entry of playlistItems.items) {
+		const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
+		if (!songEntry) {
+			failedItems++;
+			continue;
+		}
+		songEntry.playlist = playlistId;
+		playSong(songEntry, voiceChannel);
+		actualItems++;
+	}
+
+	await respond(interaction, 'okay, i\'ve added ' + actualItems + ' songs to the queue. please take a number (#' +
+		(startedEmpty ? 0 : (oldQueueLength + 1)) + '-' + songQueue.length
+		+ ')');
+	interaction.deleteReply();
+}
+
+async function optionalPlaylistPrompt(
+	interaction: ChatInputCommandInteraction,
+	playlistId: string,
+	videoId: string,
+	voiceChannel: VoiceBasedChannel)
+{
+	const playlistItems = await (ytpl(playlistId, {
+		limit: Infinity,
+		pages: Infinity
+	})).catch((e: any) => {
+		respond(interaction, 'i couldn\'t get the playlist. it\'s probably private or something. i don\'t know. i\'m just a bot. i don\'t know anything.', true);
+		return undefined;
+	});
+
+	if (!playlistItems) {
+		// assume it's a private playlist and fall back to adding just the song
+		return tryPlaySong(interaction, videoId, voiceChannel);
+	}
+
+	const numItems = playlistItems.estimatedItemCount;
+
+	const addPlaylistButton = new ButtonBuilder()
+		.setCustomId('addPlaylist')
+		.setLabel('Add Playlist (' + numItems + ' items)')
+		.setStyle(ButtonStyle.Primary);
+	
+	const addSongButton = new ButtonBuilder()
+		.setCustomId('addSong')
+		.setLabel('Just this')
+		.setStyle(ButtonStyle.Primary);
+	
+	const cancelButton = new ButtonBuilder()
+		.setCustomId('cancel')
+		.setLabel('Cancel')
+		.setStyle(ButtonStyle.Secondary);
+	
+	const row = new ActionRowBuilder<ButtonBuilder>()
+		.addComponents(addSongButton, addPlaylistButton, cancelButton);
+
+	interaction.reply({
+		content: 'this appears to be a playlist. do you want to add the whole playlist or just this song?', ephemeral: true, components: [row]
+	});
+
+	// wait for a response
+	const response = await interaction.channel?.awaitMessageComponent({
+		time: 30000,
+	}).catch((e) => {
+		interaction.reply({ content: 'you took too long, i\'m not waiting for you anymore', ephemeral: true });
+		return undefined;
+	});
+
+	if (!response) {
+		interaction.followUp('okay.. i\'ve cancelled that');
+		return;
+	}
+
+	if (response.customId === 'addPlaylist') {
+		tryQueuePlaylist(playlistId, interaction, voiceChannel);
+		return;
+	} else if (response.customId === 'addSong') {
+		response.deferReply();
+		await tryPlaySong(response as ChatInputCommandInteraction | ButtonInteraction, videoId, voiceChannel);
+		interaction.deleteReply();
+		return;
+	}
+	else if (response.customId === 'cancel') {
+		interaction.editReply({ content: 'okay, i\'m not adding anything', components: [] });
+		return;
+	}
+}
+
+function getPlaylistIdFromUrl(url: string): string | undefined {
+	const playlistString = '&list=';
+	const altPlaylistString = '/playlist?list=';
+	const listIdx = url.indexOf(playlistString);
+	const altListIdx = url.indexOf(altPlaylistString);
+	const listEndIdx = url.indexOf('&', listIdx + playlistString.length);
+	const altListEndIdx = url.indexOf('&', altListIdx + altPlaylistString.length);
+	if (listIdx !== -1 || altListIdx !== -1) {
+		let playlist: string = '';
+		const isAltPlaylist = altListIdx !== -1;
+		if (!isAltPlaylist) {
+			playlist = url.substring(listIdx + playlistString.length, listEndIdx !== -1 ? listEndIdx : undefined);
+		} else if (isAltPlaylist) {
+			playlist = url.substring(altListIdx + altPlaylistString.length, altListEndIdx !== -1 ? altListEndIdx : undefined);
+		}
+		return playlist;
+	}
+	return undefined;
+}
+
+function getLinkType(url: string): 'youtube' | 'unsupported' | 'searchTerm' {
+	if (isUrlDomain(url, 'youtube.com') || isUrlDomain(url, 'music.youtube.com')) {
+		return 'youtube';
+	}
+	if (isUrl(url)) {
+		return 'unsupported';
+	}
+	return 'searchTerm';
+}
+
 export async function playAudioCommand(interaction: ChatInputCommandInteraction) {
 	const item = interaction.options.getString('item');
 	if (!item) {
@@ -245,196 +400,69 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 	}
 
 	let url: string = item;
-	if (!isUrlDomain(item, 'youtube.com') && !isUrlDomain(item, 'music.youtube.com'))
+
+	const queryType = getLinkType(url);
+	if (queryType === 'unsupported')
 	{
-		if (isUrl(item))
-		{
-			interaction.reply({ content: 'buddy. i do NOT know wtf kind of link that is.', ephemeral: true });
+		interaction.reply({ content: 'buddy. i do NOT know wtf kind of link that is.', ephemeral: true });
+		return;
+	}
+
+	if (queryType === 'searchTerm')
+	{
+		const searchResults = ytsr(item, {
+			limit: 20,
+			pages: 1,
+			safeSearch: false,
+		});
+
+		// for now, assume that they want the first (video) result
+		const firstVideo = (await searchResults).items.find(i => i.type === "video") as ytsr.Video | undefined;
+		if (!firstVideo) {
+			// todo: figure out why this happens
+			interaction.reply({
+				content: ':/ that search term reminded me of something bad. sorry. im not queueing it.',
+				ephemeral: true
+			});
 			return;
 		}
-		else
-		{
-			// assume it's a search term
-			const searchResults = ytsr(item, {
-				limit: 20,
-				pages: 1,
-				safeSearch: false,
-			});
 
-			// for now, assume that they want the first (video) result
-			const firstVideo = (await searchResults).items.find(i => i.type === "video") as ytsr.Video | undefined;
-			if (!firstVideo) {
-				interaction.reply({
-					content: ':/ that search term reminded me of something bad. sorry. im not queueing it.',
-					ephemeral: true
-				});
-				return;
-			}
-
-			url = firstVideo.url;
-		}
+		url = firstVideo.url;
 	}
 
 	// check if it's part of a playlist
-	const playlistString = '&list=';
-	const altPlaylistString = '/playlist?list=';
-	const listIdx = url.indexOf(playlistString);
-	const altListIdx = url.indexOf(altPlaylistString)
-	const listEndIdx = url.indexOf('&', listIdx + playlistString.length);
-	const altListEndIdx = url.indexOf('&', altListIdx + altPlaylistString.length);
-	if (listIdx !== -1 || altListIdx !== -1) {
-		let playlist: string = '';
-		const isAltPlaylist = altListIdx !== -1;
-		if (!isAltPlaylist) {
-			playlist = url.substring(listIdx + playlistString.length, listEndIdx !== -1 ? listEndIdx : undefined);
-		} else if (isAltPlaylist) {
-			playlist = url.substring(altListIdx + altPlaylistString.length, altListEndIdx !== -1 ? altListEndIdx : undefined);
-		}
-
-
-		const playlistItems = await (ytpl(playlist, {
-			limit: Infinity,
-			pages: Infinity
-		})).catch((e: any) => {
-			interaction.reply('i couldn\'t get the playlist. it\'s probably private or something. i don\'t know. i\'m just a bot. i don\'t know anything.');
-			return undefined;
-		});
-
-		if (!playlistItems) {
+	const playlistId = getPlaylistIdFromUrl(url);
+	const videoId = ytdl.getVideoID(url);
+	if (playlistId) {
+		if (videoId) {
+			optionalPlaylistPrompt(interaction, playlistId, videoId, voiceChannel);
+			return;
+		} else {
+			tryQueuePlaylist(playlistId, interaction, voiceChannel);
 			return;
 		}
+	}
 
-		const numItems = playlistItems.estimatedItemCount;
-
-		if (!isAltPlaylist) {
-				const addPlaylistButton = new ButtonBuilder()
-				.setCustomId('addPlaylist')
-				.setLabel('Add Playlist (' + numItems + ' items)')
-				.setStyle(ButtonStyle.Primary);
-			
-			const addSongButton = new ButtonBuilder()
-				.setCustomId('addSong')
-				.setLabel('Just this')
-				.setStyle(ButtonStyle.Primary);
-			
-			const cancelButton = new ButtonBuilder()
-				.setCustomId('cancel')
-				.setLabel('Cancel')
-				.setStyle(ButtonStyle.Secondary);
-			
-			const row = new ActionRowBuilder<ButtonBuilder>()
-				.addComponents(addSongButton, addPlaylistButton, cancelButton);
-
-			interaction.reply({
-				content: 'this appears to be a playlist. do you want to add the whole playlist or just this song?', ephemeral: true, components: [row]
-			});
-
-			// wait for a response
-			try {
-				const response = await interaction.channel?.awaitMessageComponent({
-					time: 30000,
-				});
-
-				if (!response) {
-					interaction.followUp('okay.. i\'ve cancelled that');
-					return;
-				}
-
-							// long playlists can take a while to add, so defer the replies
-
-				if (response.customId === 'addPlaylist') {
-					response.deferReply();
-					const oldQueueLength = songQueue.length;
-					const startedEmpty = !nowPlaying;
-
-					let failedItems = 0;
-					let actualItems = 0;
-					for (const entry of playlistItems.items) {
-						const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
-						if (!songEntry) {
-							failedItems++;
-							continue;
-						}
-						songEntry.playlist = playlist;
-						playSong(songEntry, voiceChannel);
-						actualItems++;
-					}
-
-					await response.followUp('okay, i\'ve added ' + actualItems + ' songs to the queue. please take a number (#' +
-						(startedEmpty ? 0 : (oldQueueLength + 1)) + '-' + songQueue.length
-						+ ')');
-					interaction.deleteReply();
-					return;
-				} else if (response.customId === 'addSong') {
-					response.deferReply();
-					url = url.substring(0, listIdx);
-					const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
-					if (!songEntry) {
-						await response.followUp('(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
-						interaction.deleteReply();
-						return;
-					}
-					if (playSong(songEntry, voiceChannel)) {
-						await response.followUp(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
-					}
-					else {
-						await interaction.followUp('okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
-					}
-					interaction.deleteReply();
-					return;
-				}
-				else if (response.customId === 'cancel') {
-					interaction.editReply({ content: 'okay, i\'m not adding anything', components: [] });
-					return;
-				}
-			}
-			catch (e: any)
-			{
-				interaction.editReply({ content: 'you took too long, i\'m not waiting for you anymore', components: [] });
-				return;
-			}
-		}
-		else {
-			const oldQueueLength = songQueue.length;
-			const startedEmpty = !nowPlaying;
-			interaction.deferReply();
-			let failedItems = 0;
-			let successItems = 0;
-			for (const entry of playlistItems.items) {
-				const songEntry = await SongEntryFromUrl(entry.url, member, interaction.channel as TextChannel);
-				if (!songEntry) {
-					failedItems++;
-					continue;
-				}
-				songEntry.playlist = playlist;
-				playSong(songEntry, voiceChannel);
-				successItems++;
-			}
-
-			if (failedItems === numItems) {
-				interaction.followUp('jesus what a trainwreck. all songs from playlist failed to be added. i\'m not even gonna try to add it to the queue.');
-				return;
-			}
-
-			interaction.followUp('okay, i\'ve added ' + successItems + ' songs to the queue. please take a number (#' +
-			(startedEmpty ? 0 : (oldQueueLength + 1)) + '-' + songQueue.length
-				+ ')');
-			return;
-		}
+	if (!videoId) {
+		// should never happen
+		respond(interaction, 'idk', true);
+		return;
 	}
 
 	const songEntry = await SongEntryFromUrl(url, member, interaction.channel as TextChannel);
 
 	if (!songEntry)
 	{
-		interaction.reply('(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
+		respond(interaction, '(internal error)\nhttps://tenor.com/view/rip-bozo-gif-22294771');
 		return;
 	}
 
 	if (playSong(songEntry, voiceChannel)) {
-		interaction.reply(songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
+		respond(interaction, songEntry.title + ' has been added to the queue. please take a number (#' + (songQueue.length) + ')');
+		return;
 	} else {
-		interaction.reply('okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
+		respond(interaction, 'okay, fine. i will wake up JUST so i can play ' + songEntry.title + ' for you.');
+		return;
 	}
 }
 
