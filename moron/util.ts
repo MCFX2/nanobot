@@ -22,6 +22,9 @@ import {
 	ThreadMember,
 	User as DiscordUser,
 	VoiceChannel,
+	ChatInputCommandInteraction,
+	ButtonInteraction,
+	CacheType,
 } from 'discord.js';
 import isUrl from 'is-url';
 import { components } from 'twitter-api-sdk/dist/gen/openapi-types';
@@ -648,4 +651,18 @@ export function getTimeFromSeconds(seconds: number): string {
 	timeString += secs;
 
 	return timeString;
+}
+
+export async function respond(interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>, response: string, ephemeral: boolean = false) {
+	if (interaction.replied) {
+		interaction.followUp({
+			content: response,
+			ephemeral: ephemeral,
+		});
+		return;
+	}
+	interaction.reply({
+		content: response,
+		ephemeral: ephemeral,
+	});
 }
