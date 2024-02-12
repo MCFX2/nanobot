@@ -290,10 +290,19 @@ export async function playAudioCommand(interaction: ChatInputCommandInteraction)
 		} else if (isAltPlaylist) {
 			playlist = url.substring(altListIdx + altPlaylistString.length, altListEndIdx !== -1 ? altListEndIdx : undefined);
 		}
+
+
 		const playlistItems = await (ytpl(playlist, {
 			limit: Infinity,
 			pages: Infinity
-		}));
+		})).catch((e: any) => {
+			interaction.reply('i couldn\'t get the playlist. it\'s probably private or something. i don\'t know. i\'m just a bot. i don\'t know anything.');
+			return undefined;
+		});
+
+		if (!playlistItems) {
+			return;
+		}
 
 		const numItems = playlistItems.estimatedItemCount;
 
