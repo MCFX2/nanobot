@@ -654,7 +654,7 @@ export function getTimeFromSeconds(seconds: number): string {
 }
 
 export async function respond(interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>, response: string, ephemeral: boolean = false) {
-	if (interaction.replied) {
+	if (interaction.replied || interaction.deferred) {
 		interaction.followUp({
 			content: response,
 			ephemeral: ephemeral,
