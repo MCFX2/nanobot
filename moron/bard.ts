@@ -85,6 +85,10 @@ let player: AudioPlayer = createAudioPlayer({
 		noSubscriber: NoSubscriberBehavior.Stop,
 	}
 }).on('error', async (error) => {
+	// if the user manually disconnects us from the voice channel,
+	// we can hit this path
+	// i think it's very silly though
+	logger.log(error.message);
 	isReconnecting = true;
 	if (nowPlaying) {
 		if (!nowPlaying.timeStartedMs)
@@ -101,7 +105,7 @@ let player: AudioPlayer = createAudioPlayer({
 		}
 
 		logger.log('Error occurred while playing ' + nowPlaying.title + ', reconnecting...', WarningLevel.Error);
-		await delay(1000);
+		await delay(2000);
 		playStream();
 	}
 	logger.log(error.message, WarningLevel.Error);
@@ -204,7 +208,6 @@ function streamCallback(_: AudioPlayerState, newStatus: AudioPlayerState) {
 		}
 
 		if (!nowPlaying) {
-			logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
 			return;
 		}
 
