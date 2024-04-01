@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { chopWoodCommand } from "../../mmo/mmocmds";
 
 
 module.exports = {
@@ -6,5 +7,6 @@ module.exports = {
         .setName("chopwood")
         .setDescription("Chop some wood"),
         async execute(interaction: ChatInputCommandInteraction) {
+            chopWoodCommand(interaction);
         }
 }

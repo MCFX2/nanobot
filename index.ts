@@ -21,6 +21,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { MoronModule } from './moron/moronmodule';
 import { Bard } from './moron/bard';
+import { MMO } from './moron/mmo/mmo';
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -116,6 +117,7 @@ let modules: MoronModule[] = [
 	Chatty,
 	Stars,
 	Bard,
+	MMO,
 ];
 
 type InitCallback = (client: Client) => Promise<void>;

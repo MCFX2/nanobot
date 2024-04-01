@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { levelsCommand } from "../../mmo/mmocmds";
 
 
 module.exports = {
@@ -6,5 +7,6 @@ module.exports = {
         .setName("levels")
         .setDescription("See your levels and XP"),
         async execute(interaction: ChatInputCommandInteraction) {
+            levelsCommand(interaction);
         }
 }

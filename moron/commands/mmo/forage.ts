@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { forageCommand } from "../../mmo/mmocmds";
 
 
 module.exports = {
@@ -6,5 +7,6 @@ module.exports = {
         .setName("forage")
         .setDescription("Go foraging"),
         async execute(interaction: ChatInputCommandInteraction) {
+            forageCommand(interaction);
         }
 }
