@@ -6,10 +6,12 @@ import {
 	Interaction,
 	MessageReaction,
 	Partials,
+	REST,
+	Routes,
 	SlashCommandBuilder,
 	User,
 } from 'discord.js';
-import { token } from './tokens.json';
+import { token, clientID } from './tokens.json';
 import { Logger, WarningLevel } from './moron/logger';
 import { Chatty } from './moron/chatty';
 import { Reactor } from './moron/reactor';
@@ -62,43 +64,47 @@ client.commands = new Collection();
 ///
 
 // load commands
-const baseCommandPath = path.join(__dirname, 'moron', 'commands');
-
-function loadCommands(subdir: string) {
-	const commandsPath = path.join(baseCommandPath, subdir);
-	const commandFiles = fs
-		.readdirSync(commandsPath)
-		.filter(file => file.endsWith('.js'));
-
-	logger.log(commandFiles.length.toString());
-}
-
-let commandFiles: string[] = [];
 
 function getAllCommands(directory: string) {
+	let commandFiles: string[] = [];
 	fs.readdirSync(directory).forEach(file => {
 		const abs = path.join(directory, file);
 		if (fs.statSync(abs).isDirectory()) {
-			getAllCommands(abs);
+			const extraCommands = getAllCommands(abs);
+			commandFiles = commandFiles.concat(extraCommands);
 		} else if (abs.endsWith('.js')) {
 			commandFiles.push(abs);
 		}
 		return;
 	});
+	return commandFiles;
 }
 
 function loadAllCommands() {
-	getAllCommands('moron/commands/');
+	const rest = new REST().setToken(token);
+	const commandFiles = getAllCommands('moron/commands/');
+
+	const commandBlobs: string[] = [];
 
 	for (const file of commandFiles) {
 		const command = require(__dirname + '/' + file);
 
 		if ('data' in command && 'execute' in command) {
 			client.commands.set(command.data.name, command);
+			commandBlobs.push(command.data.toJSON());
 		} else {
 			logger.log('Unrecognized command in file ' + file, WarningLevel.Warning);
 		}
 	}
+
+	rest.put(Routes.applicationCommands(clientID), {
+		body: commandBlobs
+	}).then(() => {
+		logger.log(`Successfully registered ${commandBlobs.length} commands`, WarningLevel.Notice);
+	}).catch(err => {
+		logger.log('Failed to register commands', WarningLevel.Error);
+		logger.log(err, WarningLevel.Error);
+	});
 }
 
 loadAllCommands();

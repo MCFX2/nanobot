@@ -3,8 +3,8 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("levels")
-        .setDescription("See your levels and XP"),
+        .setName("combat")
+        .setDescription("go pick a fight with someone (or something)"),
         async execute(interaction: ChatInputCommandInteraction) {
         }
 }
