@@ -18,12 +18,6 @@ import { Stars } from './moron/stars';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { MoronModule } from './moron/moronmodule';
-import { TwitFollow } from './moron/feeds/twitfollow';
-import { TwitFix } from './moron/twitfix';
-import { GrocheGamesRegistration } from './moron/grochegames/registration';
-import { Error } from './moron/util';
-import { Secretary } from './moron/secretary';
-import { Storykeeper } from './moron/storykeeper';
 import { Bard } from './moron/bard';
 
 export class ExtendedClient extends Client {

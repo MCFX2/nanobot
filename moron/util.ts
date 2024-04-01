@@ -27,7 +27,6 @@ import {
 	CacheType,
 } from 'discord.js';
 import isUrl from 'is-url';
-import { components } from 'twitter-api-sdk/dist/gen/openapi-types';
 ///
 /// set up logger for util functions
 ///
@@ -408,112 +407,6 @@ export function getDiscordEmbedsFromImageTweet(tweet: Tweet) {
 	return imgEmbeds;
 }
 
-export function twitterTweetsToTweets(
-	tweets: components['schemas']['Tweet'][],
-	// postURLs: string[],
-	includes: components['schemas']['Expansions'] | undefined,
-): Tweet[] {
-	let builtTweets: Tweet[] = [];
-
-	tweets.forEach(tweet => {
-		let newTweet = new Tweet();
-
-		// post ID is straightforward
-		newTweet.tweetId = tweet.id;
-
-		// filter out possible t.co link in tweet text
-		newTweet.textContent = tweet.text
-			.split(' ')
-			.map(word => (isUrlDomain(word, 't.co') ? '' : word))
-			.filter(e => e.length > 0)
-			.join(' ')
-			.split('\n')
-			.map(word => (isUrlDomain(word, 't.co') ? '' : word))
-			.filter(e => e.length > 0)
-			.join('\n')
-			.trim();
-
-		// set creation date if known
-		if (tweet.created_at) {
-			newTweet.creationDate = new Date(tweet.created_at);
-		}
-
-		// add media embed URLs
-		if (includes) {
-			if (includes.media) {
-				if (tweet.attachments) {
-					// attempt to match attachments from includes to tweet
-					tweet.attachments.media_keys?.forEach(key => {
-						let media = includes.media?.find(
-							media => media.media_key == key,
-						) as TweetMediaItem;
-						if (media) {
-							if (media.type === 'video') {
-								// find the video variant with the highest bitrate
-								if (media.variants) {
-									let curBitRate = 0;
-									let curUrl = '';
-									media.variants.forEach(variant => {
-										if (variant.bit_rate) {
-											if (variant.bit_rate > curBitRate) {
-												curUrl = variant.url;
-												curBitRate = variant.bit_rate;
-											}
-										}
-									});
-
-									if (curUrl !== '') {
-										const extraParamsLoc = curUrl.lastIndexOf('?');
-										newTweet.embedVideos.push(
-											extraParamsLoc === -1
-												? curUrl
-												: curUrl.substring(0, extraParamsLoc),
-										);
-									}
-								}
-							} else if (media.type === 'photo') {
-								if (media.url) {
-									newTweet.embedImages.push(media.url);
-								}
-							} else if (media.type === 'animated_gif') {
-								if (media.variants) {
-									newTweet.embedVideos.push(media.variants[0].url);
-								}
-							} else {
-								logger.log(
-									'unknown media type: ' + media.type,
-									WarningLevel.Warning,
-								);
-							}
-						}
-					});
-				}
-			}
-
-			// fill in author info
-			if (includes.users) {
-				let userObj = includes.users.find(user => user.id === tweet.author_id);
-				if (userObj) {
-					newTweet.author.profilePic = userObj.profile_image_url ?? '';
-					newTweet.author.handle = userObj.username;
-					newTweet.author.name = userObj.name;
-					newTweet.author.id = userObj.id;
-				}
-			}
-		}
-
-		// fill in post URL
-		newTweet.postUrl =
-			'https://twitter.com/' +
-			(newTweet.author.handle === '' ? 'twitter' : newTweet.author.handle) +
-			'/status/' +
-			tweet.id;
-
-		builtTweets.push(newTweet);
-	});
-
-	return builtTweets;
-}
 
 ///
 /// messaging

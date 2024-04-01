@@ -4,8 +4,6 @@ import { check_xkcd, init_xkcd } from './feeds/xkcd';
 import * as cron from 'cron';
 import { check_normie, init_normie } from './feeds/normie';
 import { check_smbc, init_smbc } from './feeds/smbc';
-import { check_twitfollow, init_twitfollow } from './feeds/twitfollow';
-import { storykeeper_closeSubmissions, storykeeper_finalizeVoting, storykeeper_postPrompt, storykeeper_postReminder, storykeeper_startVoting } from './storykeeper';
 
 let client: Client;
 

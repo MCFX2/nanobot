@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, Colors, EmbedBuilder, Guild, GuildMember, Interaction, TextChannel, VoiceBasedChannel } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
 import { MoronModule } from "./moronmodule";
-import { AudioPlayer, NoSubscriberBehavior, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
+import { AudioPlayer, AudioPlayerState, NoSubscriberBehavior, VoiceConnectionDisconnectReason, VoiceConnectionStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, getVoiceConnection, joinVoiceChannel } from '@discordjs/voice';
 import ytdl from "ytdl-core";
 import { delay, getTimeFromSeconds, isUrlDomain, readCacheFileAsJson, respond } from "./util";
 import isUrl from "is-url";
@@ -96,6 +96,11 @@ let player: AudioPlayer = createAudioPlayer({
 			nowPlaying.currentProgressMs = (+Date.now()) - nowPlaying.timeStartedMs;
 		}
 
+		if(!nowPlaying) {
+			return;
+		}
+
+		logger.log('Error occurred while playing ' + nowPlaying.title + ', reconnecting...', WarningLevel.Error);
 		await delay(1000);
 		playStream();
 	}
@@ -122,7 +127,11 @@ function getCurrentStream(guild: Guild, channelId: string, create: boolean = tru
 					// probably removed from voice channel
 					songQueue.length = 0;
 					nowPlaying = undefined;
-					newConnection.destroy();
+					logger.log('Moron was manually disconnected from voice channel');
+					if (newConnection.state.status !== VoiceConnectionStatus.Destroyed)
+					{
+						newConnection.destroy();
+					}
 				}
 			} else if (newConnection.rejoinAttempts < 5) {
 				await delay((newConnection.rejoinAttempts + 1) * 5000);
@@ -132,6 +141,7 @@ function getCurrentStream(guild: Guild, channelId: string, create: boolean = tru
 				songQueue.length = 0;
 				nowPlaying = undefined;
 				// the player probably was destroyed already
+				logger.log('Connection was disconnected for some reason, clearing queue', WarningLevel.Error);
 				newConnection.destroy();
 			}
 		})
@@ -162,6 +172,11 @@ async function playStream()
 			begin: nowPlaying.currentProgressMs ? nowPlaying.currentProgressMs : 0,
 		}));
 
+		if (!nowPlaying) {
+			logger.log('nowPlaying became undefined while trying to play stream', WarningLevel.Error);
+			return;
+		}
+
 		const resource = createAudioResource(stream, {
 			inlineVolume: true,
 			inputType: type,
@@ -181,14 +196,34 @@ async function playStream()
 	}
 }
 
-function streamCallback(_: any, newStatus: { status: string; }) {
+function streamCallback(_: AudioPlayerState, newStatus: AudioPlayerState) {
 	if (newStatus.status === "idle") {
-		if (isReconnecting) return;
+
+		if (isReconnecting) {
+			return;
+		}
+
 		if (!nowPlaying) {
 			logger.log('nowPlaying was undefined when audio player finished, this should never happen', WarningLevel.Error);
+			return;
 		}
-		else {
-			logger.log(`Finished playing ${nowPlaying.title}`);
+
+		logger.log(`Finished playing ${nowPlaying.title}`);
+		const channel = nowPlaying.interactionChannel;
+		const stream = getCurrentStream(channel.guild, channel.id);
+		if (!stream) {
+			logger.log('stream was undefined when audio player finished, this should never happen', WarningLevel.Error);
+			return;
+		}
+
+		if (stream.state.status === VoiceConnectionStatus.Destroyed) {
+			logger.log("not advancing queue because connection was destroyed");
+			// clear the queue instead
+			songQueue.length = 0;
+			nowPlaying = undefined;
+		}
+		else
+		{
 			advanceQueue();
 		}
 	}
