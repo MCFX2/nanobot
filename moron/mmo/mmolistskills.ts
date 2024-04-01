@@ -201,7 +201,7 @@ export class MiningSkill extends BaseSkill {
     }
     
     protected override getRelevantSkillSave(userSave: MMOSaveFile): MMOSkillSave {
-        return userSave.woodchop;
+        return userSave.mining;
     }
 }
 

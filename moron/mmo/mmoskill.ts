@@ -66,7 +66,7 @@ export class BaseSkill {
         if(this.currentlyDoing.includes(userId)) {
             return {
                 startType: "rejected",
-                rejectionMessage: "You are already doing a skill."
+                rejectionMessage: "You are already doing this."
             }
         }
 
@@ -137,11 +137,12 @@ export class BaseSkill {
             onCompleteMessage: `${this.finishPrompt} (+${awardedXp} XP)${newXp >= xpToNextLevel ? `\n${levelUpMessage}` : ""}${lootMessage}`,
             onComplete: () => {
                 const save = getPlayerSave(userId);
-                save.woodchop.xp = newXp;
+                const skillSave = this.getRelevantSkillSave(save);
+                skillSave.xp = newXp;
                 if(newXp >= xpToNextLevel) {
                     save.earnedTitles.push(this.ranks[skillSave.level]);
-                    save.woodchop.level++;
-                    save.woodchop.xp -= xpToNextLevel;
+                    skillSave.level++;
+                    skillSave.xp -= xpToNextLevel;
                 }
                 if(loot) {
                     if(loot.type === "item") {

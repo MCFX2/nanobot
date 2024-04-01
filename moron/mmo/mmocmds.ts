@@ -69,17 +69,17 @@ export function chopWoodCommand(interaction: ChatInputCommandInteraction) {
 }
 
 export function combatCommand(interaction: ChatInputCommandInteraction) {
-    handleSkillCommand(interaction, WoodChop);
+    handleSkillCommand(interaction, Combat);
 }
 
 export function forageCommand(interaction: ChatInputCommandInteraction) {
-    handleSkillCommand(interaction, WoodChop);
+    handleSkillCommand(interaction, ForageSkill);
 }
 
 export function fishCommand(interaction: ChatInputCommandInteraction) {
-    handleSkillCommand(interaction, WoodChop);
+    handleSkillCommand(interaction, FishSkill);
 }
 
 export function mineCommand(interaction: ChatInputCommandInteraction) {
-    handleSkillCommand(interaction, WoodChop);
+    handleSkillCommand(interaction, MineSkill);
 }

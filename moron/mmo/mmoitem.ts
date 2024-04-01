@@ -459,31 +459,31 @@ export const miscItems: MMOItem[] = [
 export function generateDescription(item: MMOItem) {
     switch(item.itemEffect) {
         case ItemBuffType.WoodchopFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} woodchop speed`;
+            return `${item.power > 0 ? "+" : ""}${item.power} woodchop speed`;
         case ItemBuffType.MiningFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} mining speed`;
+            return `${item.power > 0 ? "+" : ""}${item.power} mining speed`;
         case ItemBuffType.FishingFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} fishing speed`;
+            return `${item.power > 0 ? "+" : ""}${item.power} fishing speed`;
         case ItemBuffType.ForagingFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} foraging speed`;
+            return `${item.power > 0 ? "+" : ""}${item.power} foraging speed`;
         case ItemBuffType.CombatFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} combat speed`;
+            return `${item.power > 0 ? "+" : ""}${item.power} combat speed`;
         case ItemBuffType.WoodchopBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} woodchopping`;
+            return `${item.power > 0 ? "+" : ""}${item.power} woodchopping`;
         case ItemBuffType.MiningBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} mining`;
+            return `${item.power > 0 ? "+" : ""}${item.power} mining`;
         case ItemBuffType.FishingBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} fishing`;
+            return `${item.power > 0 ? "+" : ""}${item.power} fishing`;
         case ItemBuffType.ForagingBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} foraging`;
+            return `${item.power > 0 ? "+" : ""}${item.power} foraging`;
         case ItemBuffType.CombatBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} combat`;
+            return `${item.power > 0 ? "+" : ""}${item.power} combat`;
         case ItemBuffType.EverythingFaster:
-            return `${item.power > 0 ? "+" : "-"}${item.power} to all skill speeds`;
+            return `${item.power > 0 ? "+" : ""}${item.power} to all skill speeds`;
         case ItemBuffType.EverythingBetter:
-            return `${item.power > 0 ? "+" : "-"}${item.power} to all skills`;
+            return `${item.power > 0 ? "+" : ""}${item.power} to all skills`;
         case ItemBuffType.Lucky:
-            return `${item.power > 0 ? "+" : "-"}${item.power} luck`;
+            return `${item.power > 0 ? "+" : ""}${item.power} luck`;
         default:
             return `junk item`;
     }
