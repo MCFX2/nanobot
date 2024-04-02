@@ -2,6 +2,7 @@ import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { getPlayerSave } from "./mmofile";
 import { BaseSkill, SkillStarter, startSkill } from "./mmoskill";
 import { Combat, FishSkill, ForageSkill, MineSkill, WoodChop } from "./mmolistskills";
+import { ItemBuffType } from "./mmoitem";
 
 export function levelsCommand(interaction: ChatInputCommandInteraction) {
     const save = getPlayerSave(interaction.user.id);
@@ -82,4 +83,104 @@ export function fishCommand(interaction: ChatInputCommandInteraction) {
 
 export function mineCommand(interaction: ChatInputCommandInteraction) {
     handleSkillCommand(interaction, MineSkill);
+}
+
+export function debugStatCommand(interaction: ChatInputCommandInteraction) {
+    const userarg = interaction.options.getString("user");
+    if (!userarg) {
+        interaction.reply({ ephemeral: true, content: "You must mention a user"});
+        return;
+    }
+
+    const save = getPlayerSave(userarg);
+
+    const globalSpeed = save.inventory.reduce((acc, item) => {
+        if (item.itemEffect === ItemBuffType.EverythingFaster) {
+            return acc + item.power;
+        }
+        return acc; }, 0);
+
+        const globalPower = save.inventory.reduce((acc, item) => {
+            if (item.itemEffect === ItemBuffType.EverythingBetter) {
+                return acc + item.power;
+            }
+            return acc; }, 0);
+
+    interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setTitle("debug stats")
+                .setDescription(`**Wood Chopping:** ${save.woodchop.level} / 20 (${save.woodchop.xp} XP)
+                Rank: ${WoodChop.getCurrentRank(save.userId)}
+                Speed: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.WoodchopFaster) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalSpeed)}
+                Power: +${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.WoodchopBetter) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalPower)}
+                \n
+                **Mining:** ${save.mining.level} / 20 (${save.mining.xp} XP)
+                Rank: ${MineSkill.getCurrentRank(save.userId)}
+                Speed: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.MiningFaster) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalSpeed)}
+                    Power: +${save.inventory.reduce((acc, item) => {
+                        if (item.itemEffect === ItemBuffType.WoodchopBetter) {
+                            return acc + item.power;
+                        }
+                        return acc; }, globalPower)}
+                \n
+                **Fishing:** ${save.fishing.level} / 20 (${save.fishing.xp} XP)
+                Rank: ${FishSkill.getCurrentRank(save.userId)}
+                Speed: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.FishingFaster) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalSpeed)}
+                    Power: +${save.inventory.reduce((acc, item) => {
+                        if (item.itemEffect === ItemBuffType.WoodchopBetter) {
+                            return acc + item.power;
+                        }
+                        return acc; }, globalPower)}
+                \n
+                **Foraging:** ${save.foraging.level} / 20 (${save.foraging.xp} XP)
+                Rank: ${ForageSkill.getCurrentRank(save.userId)}
+                Speed: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.ForagingFaster) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalSpeed)}
+                    Power: +${save.inventory.reduce((acc, item) => {
+                        if (item.itemEffect === ItemBuffType.WoodchopBetter) {
+                            return acc + item.power;
+                        }
+                        return acc; }, globalPower)}
+                \n
+                **Combat:** ${save.combat.level} / 20 (${save.combat.xp} XP)
+                Rank: ${Combat.getCurrentRank(save.userId)}
+                Speed: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.CombatFaster) {
+                        return acc + item.power;
+                    }
+                    return acc; }, globalSpeed)}
+                    Power: +${save.inventory.reduce((acc, item) => {
+                        if (item.itemEffect === ItemBuffType.WoodchopBetter) {
+                            return acc + item.power;
+                        }
+                        return acc; }, globalPower)}
+                \n
+                Luck: ${save.inventory.reduce((acc, item) => {
+                    if (item.itemEffect === ItemBuffType.Lucky) {
+                        return acc + item.power;
+                    }
+                    return acc; }, 0)}
+                Items In Inventory: ${save.inventory.length}`)
+        ]
+    })
 }

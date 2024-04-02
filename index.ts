@@ -69,6 +69,9 @@ client.commands = new Collection();
 function getAllCommands(directory: string) {
 	let commandFiles: string[] = [];
 	fs.readdirSync(directory).forEach(file => {
+		if (file.startsWith("_")) {
+			return;
+		}
 		const abs = path.join(directory, file);
 		if (fs.statSync(abs).isDirectory()) {
 			const extraCommands = getAllCommands(abs);

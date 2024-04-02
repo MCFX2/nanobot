@@ -420,12 +420,6 @@ export const miscItems: MMOItem[] = [
     },
     {
         type: "item",
-        displayName: "Subway Surfers (distracting)",
-        itemEffect: ItemBuffType.EverythingFaster,
-        power: -1,
-    },
-    {
-        type: "item",
         displayName: "Lorax Companion",
         itemEffect: ItemBuffType.WoodchopBetter,
         power: -1,
