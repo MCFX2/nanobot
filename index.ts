@@ -3,25 +3,25 @@ import {
 	Client,
 	Collection,
 	GatewayIntentBits,
-	Interaction,
-	MessageReaction,
+	type Interaction,
+	type MessageReaction,
 	Partials,
 	REST,
 	Routes,
-	SlashCommandBuilder,
-	User,
-} from 'discord.js';
-import { token, clientID } from './tokens.json';
-import { Logger, WarningLevel } from './moron/logger';
-import { Chatty } from './moron/chatty';
-import { Reactor } from './moron/reactor';
-import { daily_init } from './moron/daily';
-import { Stars } from './moron/stars';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-import { MoronModule } from './moron/moronmodule';
-import { Bard } from './moron/bard';
-import { MMO } from './moron/mmo/mmo';
+	type SlashCommandBuilder,
+	type User,
+} from "discord.js";
+import { token, clientID } from "./tokens.json";
+import { Logger, WarningLevel } from "./moron/logger";
+import { Chatty } from "./moron/chatty";
+import { Reactor } from "./moron/reactor";
+import { daily_init } from "./moron/daily";
+import { Stars } from "./moron/stars";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import type { MoronModule } from "./moron/moronmodule";
+import { Bard } from "./moron/bard";
+import { MMO } from "./moron/mmo/mmo";
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -33,8 +33,8 @@ export class ExtendedClient extends Client {
 	> = new Collection();
 }
 
-let logger: Logger = new Logger('core', WarningLevel.Notice);
-logger.log('Bot starting...');
+const logger: Logger = new Logger("core", WarningLevel.Notice);
+logger.log("Bot starting...");
 
 const client = new Client({
 	intents: [
@@ -47,8 +47,8 @@ const client = new Client({
 		GatewayIntentBits.DirectMessages,
 	],
 	presence: {
-		activities: [{ name: 'your mom', type: ActivityType.Competing }],
-		status: 'dnd',
+		activities: [{ name: "your mom", type: ActivityType.Competing }],
+		status: "dnd",
 	},
 	partials: [
 		Partials.User,
@@ -68,74 +68,81 @@ client.commands = new Collection();
 
 function getAllCommands(directory: string) {
 	let commandFiles: string[] = [];
-	fs.readdirSync(directory).forEach(file => {
+	for (const file of fs.readdirSync(directory)) {
 		if (file.startsWith("_")) {
 			return;
 		}
 		const abs = path.join(directory, file);
 		if (fs.statSync(abs).isDirectory()) {
 			const extraCommands = getAllCommands(abs);
-			commandFiles = commandFiles.concat(extraCommands);
-		} else if (abs.endsWith('.ts')) {
+			if (extraCommands) {
+				commandFiles = commandFiles.concat(extraCommands);
+			}
+		} else if (abs.endsWith(".ts")) {
 			commandFiles.push(abs);
 		}
 		return;
-	});
+	}
 	return commandFiles;
 }
 
 function loadAllCommands() {
 	const rest = new REST().setToken(token);
-	const commandFiles = getAllCommands('moron/commands/');
+	const commandFiles = getAllCommands("moron/commands/");
+
+	if (!commandFiles) {
+		logger.log("Failed to load commands", WarningLevel.Error);
+		return;
+	}
 
 	const commandBlobs: string[] = [];
 
 	for (const file of commandFiles) {
-		const command = require(__dirname + '/' + file);
+		const command = require(`${__dirname}/${file}`);
 
-		if ('data' in command && 'execute' in command) {
+		if ("data" in command && "execute" in command) {
 			client.commands.set(command.data.name, command);
 			commandBlobs.push(command.data.toJSON());
 		} else {
-			logger.log('Unrecognized command in file ' + file, WarningLevel.Warning);
+			logger.log(`Unrecognized command in file ${file}`, WarningLevel.Warning);
 		}
 	}
 
-	rest.put(Routes.applicationCommands(clientID), {
-		body: commandBlobs
-	}).then(() => {
-		logger.log(`Successfully registered ${commandBlobs.length} commands`, WarningLevel.Notice);
-	}).catch(err => {
-		logger.log('Failed to register commands', WarningLevel.Error);
-		logger.log(err, WarningLevel.Error);
-	});
+	rest
+		.put(Routes.applicationCommands(clientID), {
+			body: commandBlobs,
+		})
+		.then(() => {
+			logger.log(
+				`Successfully registered ${commandBlobs.length} commands`,
+				WarningLevel.Notice,
+			);
+		})
+		.catch((err) => {
+			logger.log("Failed to register commands", WarningLevel.Error);
+			logger.log(err, WarningLevel.Error);
+		});
 }
 
 loadAllCommands();
 
 // init modules
 
-let modules: MoronModule[] = [
-	Reactor,
-	Chatty,
-	Stars,
-	Bard,
-	MMO,
-];
+const modules: MoronModule[] = [Reactor, Chatty, Stars, Bard, MMO];
 
 type InitCallback = (client: Client) => Promise<void>;
 
-let initCallbacks: InitCallback[] = [daily_init];
+const initCallbacks: InitCallback[] = [daily_init];
 
-client.once('ready', async () => {
+client.once("ready", async () => {
 	// init modules
 	await Promise.allSettled(
-		initCallbacks.map(cb => {
+		initCallbacks.map((cb) => {
 			try {
 				cb(client);
-			} catch (err: any) {
+			} catch (err: unknown) {
 				logger.log(
-					'Exception thrown when initializing module ' + cb.name,
+					`Exception thrown when initializing module ${cb.name}`,
 					WarningLevel.Error,
 				);
 				logger.log(err, WarningLevel.Error);
@@ -144,12 +151,12 @@ client.once('ready', async () => {
 	);
 
 	await Promise.allSettled(
-		modules.map(mod => {
+		modules.map((mod) => {
 			try {
 				if (mod.onInit) mod.onInit(client);
-			} catch (err: any) {
+			} catch (err: unknown) {
 				logger.log(
-					'Exception thrown when initializing module ' + mod.name,
+					`Exception thrown when initializing module ${mod.name}`,
 					WarningLevel.Error,
 				);
 				logger.log(err, WarningLevel.Error);
@@ -158,44 +165,44 @@ client.once('ready', async () => {
 	);
 	// all done
 
-	logger.log('Bot started');
+	logger.log("Bot started");
 });
 
 ///
 /// commands
 ///
 
-client.on('interactionCreate', async interaction => {
+client.on("interactionCreate", async (interaction) => {
 	if (interaction.isChatInputCommand()) {
 		const command = client.commands.get(interaction.commandName);
 
 		if (!command) {
 			logger.log(
-				'Unrecognized command ' + interaction.commandName,
+				`Unrecognized command ${interaction.commandName}`,
 				WarningLevel.Error,
 			);
 			return;
 		}
 		try {
 			await command.execute(interaction);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			logger.log(err, WarningLevel.Error);
 			await interaction.reply({
-				content: 'something is FUCKED UP here, dude (internal error)',
+				content: "something is FUCKED UP here, dude (internal error)",
 				ephemeral: true,
 			});
 		}
 	} else {
 		// fall back to external interaction handlers
-		modules.every(mod => {
+		modules.every((mod) => {
 			try {
 				if (mod.onInteract) {
 					return !mod.onInteract(interaction);
 				}
 				return true;
-			} catch (err: any) {
+			} catch (err: unknown) {
 				logger.log(
-					'exception thrown handling interaction in module ' + mod.name,
+					`exception thrown handling interaction in module ${mod.name}`,
 					WarningLevel.Error,
 				);
 				logger.log(JSON.stringify(err), WarningLevel.Error);
@@ -209,71 +216,64 @@ client.on('interactionCreate', async interaction => {
 /// messages
 ///
 
-client.on('messageCreate', async msg => {
-	if (!client.user || msg.author.id == client.user.id) return;
+client.on("messageCreate", async (msg) => {
+	if (!client.user || msg.author.id === client.user.id) return;
 
-	if (msg.partial) {
-		msg = await msg.fetch();
-	}
+	const fullMsg = msg.partial ? await msg.fetch() : msg;
 
-	modules.forEach(mod => {
+	for (const mod of modules) {
 		try {
-			if (mod.onMessageSend) mod.onMessageSend(msg);
-		} catch (err: any) {
+			if (mod.onMessageSend) mod.onMessageSend(fullMsg);
+		} catch (err: unknown) {
 			logger.log(
-				'Exception thrown handling message in module ' + mod.name,
+				`Exception thrown handling message in module ${mod.name}`,
 				WarningLevel.Error,
 			);
 			logger.log(err, WarningLevel.Error);
 		}
-	});
+	}
 });
 
 ///
 /// reactions
 ///
 
-client.on('messageReactionAdd', async (react, user) => {
+client.on("messageReactionAdd", async (react, user) => {
 	if (react.me) return;
 
-	if (react.partial) {
-		react = await react.fetch();
-	}
+	const fullReact = react.partial ? await react.fetch() : react;
+	const fullUser = user.partial ? await user.fetch() : user;
 
-	if (user.partial)
-	{
-		user = await user.fetch();
-	}
-
-	modules.forEach(module => {
+	for (const module of modules) {
 		try {
 			if (module.onReactionAdd) {
-				module.onReactionAdd(react as MessageReaction, user as User);
+				module.onReactionAdd(fullReact, fullUser);
 			}
-		} catch (err: any) {
-			logger.log('Exception thrown handling reaction add', WarningLevel.Error);
+		} catch (err: unknown) {
+			logger.log("Exception thrown handling reaction add", WarningLevel.Error);
 			logger.log(err, WarningLevel.Error);
 		}
-	});
+	}
 });
 
-client.on('messageReactionRemove', async react => {
+client.on("messageReactionRemove", async (react) => {
 	if (react.me) return;
 
-	if (react.partial) {
-		react = await react.fetch();
-	}
+	const fullReact = react.partial ? await react.fetch() : react;
 
-	modules.forEach(module => {
+	for (const module of modules) {
 		try {
 			if (module.onReactionRemove) {
-				module.onReactionRemove(react as MessageReaction);
+				module.onReactionRemove(fullReact);
 			}
-		} catch (err: any) {
-			logger.log('Exception thrown handling reaction removal', WarningLevel.Error);
+		} catch (err: unknown) {
+			logger.log(
+				"Exception thrown handling reaction removal",
+				WarningLevel.Error,
+			);
 			logger.log(err, WarningLevel.Error);
 		}
-	});
+	}
 });
 
 // get everything started
