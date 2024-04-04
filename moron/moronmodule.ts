@@ -1,14 +1,14 @@
-import {
+import type {
 	CacheType,
 	Client,
 	Interaction,
 	Message,
 	MessageReaction,
 	User,
-} from 'discord.js';
+} from "discord.js";
 
 export class MoronModule {
-	name: string = 'unnamed module';
+	name = "unnamed module";
 
 	onInit?: (client: Client) => void;
 	onMessageSend?: (msg: Message) => void;

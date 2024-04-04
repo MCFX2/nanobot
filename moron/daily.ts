@@ -1,13 +1,13 @@
-import { Logger, WarningLevel } from './logger';
-import { Client } from 'discord.js';
-import { check_xkcd, init_xkcd } from './feeds/xkcd';
-import * as cron from 'cron';
-import { check_normie, init_normie } from './feeds/normie';
-import { check_smbc, init_smbc } from './feeds/smbc';
+import { Logger, WarningLevel } from "./logger";
+import type { Client } from "discord.js";
+import { check_xkcd, init_xkcd } from "./feeds/xkcd";
+import * as cron from "cron";
+import { check_normie, init_normie } from "./feeds/normie";
+import { check_smbc, init_smbc } from "./feeds/smbc";
 
 let client: Client;
 
-let logger: Logger = new Logger('daily', WarningLevel.Warning);
+const logger: Logger = new Logger("daily", WarningLevel.Warning);
 
 interface Job {
 	init: (clientInstance: Client) => void;
@@ -18,8 +18,8 @@ interface Job {
 }
 
 class JobOptions {
-	enabled: boolean = true;
-	runOnStart: boolean = false;
+	enabled = true;
+	runOnStart = false;
 }
 
 function make_job(
@@ -40,10 +40,10 @@ function make_job(
 
 function run_job(job: Job) {
 	try {
-		logger.log('running job ' + job.name, WarningLevel.Notice);
+		logger.log(`running job ${job.name}`, WarningLevel.Notice);
 		job.callback();
-	} catch (err: any) {
-		logger.log('Caught exception running job ' + job.name, WarningLevel.Error);
+	} catch (err: unknown) {
+		logger.log(`Caught exception running job ${job.name}`, WarningLevel.Error);
 		logger.log(err, WarningLevel.Error);
 	}
 }
@@ -51,9 +51,9 @@ function run_job(job: Job) {
 // https://crontab.guru/#*_*_*_*_*
 // useful resource for writing cron schedules
 const jobs: Job[] = [
-	make_job('25 11 * * *', init_xkcd, check_xkcd, 'XKCD'),
-	make_job('40 7 * * *', init_normie, check_normie, 'normie'),
-	make_job('35 14 * * *', init_smbc, check_smbc, 'SMBC'),
+	make_job("25 11 * * *", init_xkcd, check_xkcd, "XKCD"),
+	make_job("40 7 * * *", init_normie, check_normie, "normie"),
+	make_job("35 14 * * *", init_smbc, check_smbc, "SMBC"),
 	// run storykeeper every Monday at 6PM
 	// make_job('0 18 * * 1', () => { }, storykeeper_postPrompt, 'storykeeper-postPrompt'),
 	// make_job('0 6 * * 6', () => { }, storykeeper_postReminder, 'storykeeper-postReminder'),
@@ -62,13 +62,13 @@ const jobs: Job[] = [
 	// make_job('0 18 * * 2', () => { }, storykeeper_finalizeVoting, 'storykeeper-finalizeVotes'),
 ];
 
-let activeJobs: cron.CronJob[] = [];
+const activeJobs: cron.CronJob[] = [];
 
 export async function daily_init(clientInstance: Client) {
 	client = clientInstance;
 
-	jobs.forEach(job => {
-		logger.log('initializing ' + job.name);
+	for (const job of jobs) {
+		logger.log(`initializing ${job.name}`);
 		job.init(client);
 
 		if (job.options.enabled) {
@@ -82,9 +82,11 @@ export async function daily_init(clientInstance: Client) {
 		if (job.options.runOnStart) {
 			run_job(job);
 		}
-	});
+	}
 
-	activeJobs.forEach(job => job.start());
+	for (const job of activeJobs) {
+		job.start();
+	}
 
-	logger.log('finished starting with ' + activeJobs.length + ' active jobs');
+	logger.log(`finished starting with ${activeJobs.length} active jobs`);
 }
