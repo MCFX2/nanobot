@@ -76,7 +76,7 @@ function getAllCommands(directory: string) {
 		if (fs.statSync(abs).isDirectory()) {
 			const extraCommands = getAllCommands(abs);
 			commandFiles = commandFiles.concat(extraCommands);
-		} else if (abs.endsWith('.js')) {
+		} else if (abs.endsWith('.ts')) {
 			commandFiles.push(abs);
 		}
 		return;
