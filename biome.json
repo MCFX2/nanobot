@@ -8,12 +8,10 @@
 		"rules": {
 			"recommended": true
 		},
-		"ignore": [
-			"db/**/*.json",
-			"supervise/*.*"
-		]
+		"ignore": ["db/**/*.json", "supervise/*.*"]
 	},
 	"formatter": {
-		"enabled": true
+		"enabled": true,
+		"ignore": ["db/**/*.json", "supervise/*.*"]
 	}
 }

@@ -4,12 +4,10 @@ import {
 	Collection,
 	GatewayIntentBits,
 	type Interaction,
-	type MessageReaction,
 	Partials,
 	REST,
 	Routes,
 	type SlashCommandBuilder,
-	type User,
 } from "discord.js";
 import { token, clientID } from "./tokens.json";
 import { Logger, WarningLevel } from "./moron/logger";
