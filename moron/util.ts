@@ -1,37 +1,37 @@
-import * as fs from 'fs';
-import * as settings from '../config/general.json';
-import { Logger, WarningLevel } from './logger';
-import HtmlParser, { HTMLElement } from 'node-html-parser';
+import * as fs from "node:fs";
+import * as settings from "../config/general.json";
+import { Logger, WarningLevel } from "./logger";
+import HtmlParser, { type HTMLElement } from "node-html-parser";
 import {
-	CategoryChannel,
-	DMChannel,
+	type CategoryChannel,
+	type DMChannel,
 	EmbedBuilder,
-	ForumChannel,
-	Guild,
-	GuildEmoji,
-	GuildMember,
-	Message,
-	NewsChannel,
-	PartialDMChannel,
-	PartialGroupDMChannel,
-	PrivateThreadChannel,
-	PublicThreadChannel,
-	Role,
-	StageChannel,
-	TextChannel,
-	ThreadMember,
-	User as DiscordUser,
-	VoiceChannel,
-	ChatInputCommandInteraction,
-	ButtonInteraction,
-	CacheType,
-} from 'discord.js';
-import isUrl from 'is-url';
+	type ForumChannel,
+	type Guild,
+	type GuildEmoji,
+	type GuildMember,
+	type Message,
+	type NewsChannel,
+	type PartialDMChannel,
+	type PartialGroupDMChannel,
+	type PrivateThreadChannel,
+	type PublicThreadChannel,
+	type Role,
+	type StageChannel,
+	type TextChannel,
+	type ThreadMember,
+	type User as DiscordUser,
+	type VoiceChannel,
+	type ChatInputCommandInteraction,
+	type ButtonInteraction,
+	type CacheType,
+} from "discord.js";
+import isUrl from "is-url";
 ///
 /// set up logger for util functions
 ///
 
-const logger: Logger = new Logger('utils', WarningLevel.Warning);
+const logger: Logger = new Logger("utils", WarningLevel.Warning);
 
 ///
 /// error override interface so we can get an actual error code
@@ -50,11 +50,11 @@ export declare interface Error {
 ///
 
 export class StringMatch {
-	match: string = '';
+	match = "";
 	// ignores any character found in punctuationChars[] for comparison purposes
-	ignorePunctuation: boolean = true;
+	ignorePunctuation = true;
 	// converts both this string and whatever it's being compared to lower-case before comparison
-	ignoreCapitalization: boolean = true;
+	ignoreCapitalization = true;
 }
 
 // creates an array of stringmatches with the corresponding strings, all with the same stringmatch options
@@ -63,14 +63,14 @@ export function stringSet(
 	ignorePunctuation: boolean,
 	ignoreCapitalization: boolean,
 ): StringMatch[] {
-	let results: StringMatch[] = [];
-	matches.forEach(match => {
+	const results: StringMatch[] = [];
+	for (const match of matches) {
 		results.push({
 			match: match,
 			ignorePunctuation: ignorePunctuation,
 			ignoreCapitalization: ignoreCapitalization,
 		});
-	});
+	}
 
 	return results;
 }
@@ -78,18 +78,18 @@ export function stringSet(
 const punctuationChars: string[] = [
 	"'",
 	'"',
-	'.',
-	',',
-	'_',
-	'-',
-	'*',
-	'&',
-	'%',
-	'$',
-	'#',
-	'@',
-	'!',
-	'`',
+	".",
+	",",
+	"_",
+	"-",
+	"*",
+	"&",
+	"%",
+	"$",
+	"#",
+	"@",
+	"!",
+	"`",
 ];
 // not efficient but fast enough for our purposes
 export function doesMatch(
@@ -105,10 +105,10 @@ export function doesMatch(
 	}
 
 	if (testString.ignorePunctuation) {
-		punctuationChars.forEach(char => {
-			cmpString1.replace(char, '');
-			cmpString2.replace(char, '');
-		});
+		for (const char of punctuationChars) {
+			cmpString1.replace(char, "");
+			cmpString2.replace(char, "");
+		}
 	}
 
 	return cmpString1.includes(cmpString2);
@@ -129,10 +129,10 @@ export function whereMatch(
 	}
 
 	if (testString.ignorePunctuation) {
-		punctuationChars.forEach(char => {
-			cmpString1.replace(char, '');
-			cmpString2.replace(char, '');
-		});
+		for (const char of punctuationChars) {
+			cmpString1.replace(char, "");
+			cmpString2.replace(char, "");
+		}
 	}
 
 	return cmpString1.indexOf(cmpString2);
@@ -146,10 +146,10 @@ export function getEarliestMatch(
 	matchCandidates: StringMatch[],
 ): { matchedString: string; matchedIndex: number } | undefined {
 	let beforeMatch: StringMatch | undefined;
-	let beforeMatchPos: number = -1;
+	let beforeMatchPos = -1;
 	if (matchCandidates.length > 0) {
-		matchCandidates.forEach((match: StringMatch) => {
-			let matchPos = whereMatch(inputString, match);
+		for (const match of matchCandidates) {
+			const matchPos = whereMatch(inputString, match);
 			if (matchPos !== -1) {
 				if (beforeMatchPos === -1) {
 					beforeMatchPos = matchPos;
@@ -159,7 +159,7 @@ export function getEarliestMatch(
 					beforeMatch = match;
 				}
 			}
-		});
+		}
 		if (beforeMatch === undefined) return undefined;
 		return { matchedString: beforeMatch.match, matchedIndex: beforeMatchPos };
 	}
@@ -174,10 +174,10 @@ export function getLastMatch(
 	matchCandidates: StringMatch[],
 ): { matchedString: string; matchedIndex: number } | undefined {
 	let lastMatch: StringMatch | undefined;
-	let lastMatchPos: number = -1;
+	let lastMatchPos = -1;
 	if (matchCandidates.length > 0) {
-		matchCandidates.forEach((match: StringMatch) => {
-			let matchPos = whereMatch(inputString, match);
+		for (const match of matchCandidates) {
+			const matchPos = whereMatch(inputString, match);
 			if (matchPos !== -1) {
 				if (lastMatchPos === -1) {
 					lastMatchPos = matchPos;
@@ -187,7 +187,7 @@ export function getLastMatch(
 					lastMatch = match;
 				}
 			}
-		});
+		}
 		if (lastMatch === undefined) return undefined;
 		return { matchedString: lastMatch.match, matchedIndex: lastMatchPos };
 	}
@@ -206,14 +206,14 @@ export async function getEmote(
 
 	try {
 		return await guild.emojis.fetch(emoteId);
-	} catch (err: any) {
+	} catch (err: unknown) {
 		return undefined;
 	}
 }
 
 // converts <:emote:1234567890> to 1234567890
 export function emoteNameToId(emoji: string) {
-	return emoji.substring(emoji.lastIndexOf(':') + 1, emoji.length - 1);
+	return emoji.substring(emoji.lastIndexOf(":") + 1, emoji.length - 1);
 }
 
 ///
@@ -222,11 +222,11 @@ export function emoteNameToId(emoji: string) {
 
 function createCacheFile(filename: string) {
 	try {
-		fs.writeFileSync(settings.cacheDir + filename, '');
-	} catch (error: any) {
-		if ((error as Error).code === 'ENOENT') {
+		fs.writeFileSync(settings.cacheDir + filename, "");
+	} catch (error: unknown) {
+		if ((error as Error).code === "ENOENT") {
 			fs.mkdirSync(settings.cacheDir);
-			fs.writeFileSync(settings.cacheDir + filename, '');
+			fs.writeFileSync(settings.cacheDir + filename, "");
 		} else {
 			logger.log(error, WarningLevel.Error);
 		}
@@ -236,8 +236,8 @@ function createCacheFile(filename: string) {
 export function writeCacheFile(filename: string, contents: Buffer) {
 	try {
 		fs.writeFileSync(settings.cacheDir + filename, contents);
-	} catch (error: any) {
-		if ((error as Error).code === 'ENOENT') {
+	} catch (error: unknown) {
+		if ((error as Error).code === "ENOENT") {
 			createCacheFile(filename);
 			fs.writeFileSync(settings.cacheDir + filename, contents);
 		}
@@ -250,9 +250,9 @@ export function writeCacheFile(filename: string, contents: Buffer) {
 export function readCacheFile(filename: string): Buffer | undefined {
 	try {
 		return fs.readFileSync(settings.cacheDir + filename);
-	} catch (error: any) {
+	} catch (error: unknown) {
 		//create new db file if it does not already exist
-		if ((error as Error).code === 'ENOENT') {
+		if ((error as Error).code === "ENOENT") {
 			createCacheFile(filename);
 		} else {
 			logger.log(error, WarningLevel.Error);
@@ -263,35 +263,32 @@ export function readCacheFile(filename: string): Buffer | undefined {
 
 // same as readCacheFile but it also parses the result into a JSON object
 // returns undefined if the file could not be created or was empty
-export function readCacheFileAsJson(filename: string): any {
-	let buf = readCacheFile(filename);
+export function readCacheFileAsJson(filename: string) {
+	const buf = readCacheFile(filename);
 	if (!buf) {
 		return undefined;
-	} else {
-		if (buf.length == 0) return undefined;
+	}
+	if (buf.length === 0) {
+		return undefined;
+	}
 
-		try {
-			return JSON.parse(buf.toString());
-		} catch (err: any) {
-			if (err as SyntaxError) {
-				// return invalid JSON as undefined
-				logger.log(
-					'Corrupt or invalid JSON loaded from ' + filename,
-					WarningLevel.Warning,
-				);
-				return undefined;
-			} else {
-				logger.log(err, WarningLevel.Error);
-				return undefined;
-			}
-		}
+	try {
+		return JSON.parse(buf.toString());
+	} catch (err: unknown) {
+		// return invalid JSON as undefined
+		logger.log(
+			`Corrupt or invalid JSON loaded from ${filename}`,
+			WarningLevel.Warning,
+		);
+		logger.log(err, WarningLevel.Error);
+		return undefined;
 	}
 }
 
 // same as writeCacheFile but covers the most common use case
 // where we want to simply dump the object as-is as a formatted JSON
-export function writeCacheFileAsJson(filename: string, contents: any) {
-	writeCacheFile(filename, Buffer.from(JSON.stringify(contents, null, '\t')));
+export function writeCacheFileAsJson(filename: string, contents: unknown) {
+	writeCacheFile(filename, Buffer.from(JSON.stringify(contents, null, "\t")));
 }
 
 ///
@@ -303,17 +300,13 @@ export function getSingleElement(
 	tagName: string,
 	errorLogger: Logger,
 ): HTMLElement | undefined {
-	const elements = HtmlParser.parse(htmlSource ?? '< />').getElementsByTagName(
+	const elements = HtmlParser.parse(htmlSource ?? "< />").getElementsByTagName(
 		tagName,
 	);
 
 	if (elements.length !== 1) {
 		errorLogger.log(
-			'Number of elements matching ' +
-				tagName +
-				' tag was ' +
-				elements.length +
-				' but we expected one! Did the RSS syntax change?',
+			`Number of elements matching ${tagName} tag was ${elements.length} but we expected one! Did the RSS syntax change?`,
 			WarningLevel.Error,
 		);
 		return undefined;
@@ -329,84 +322,14 @@ export function getSingleElement(
 export function isUrlDomain(text: string, domain: string): boolean {
 	if (isUrl(text)) {
 		const url = new URL(text);
-		if (url.hostname.startsWith('www.')) {
+		if (url.hostname.startsWith("www.")) {
 			url.hostname = url.hostname.substring(4);
 		}
-		if (url.hostname == domain) return true;
+		if (url.hostname === domain) return true;
 		return false;
 	}
 	return false;
 }
-
-///
-/// Twitter API
-///
-
-// manually specify official twitter api interface because the TS library doesn't have it for some reason
-export class User {
-	name: string = 'unknown'; // user's display name
-	handle: string = ''; // user's @handle
-	profilePic: string = ''; // link to user's profile image
-	id: string = '0';
-}
-
-export class Tweet {
-	author: User = new User();
-	tweetId: string = '0';
-	textContent: string = '';
-	creationDate: Date = new Date();
-
-	embedVideos: string[] = []; // list of links to videos contained in tweet
-	embedImages: string[] = []; // list of links to images contained in tweet
-
-	postUrl: string = 'about:blank'; // link to the post itself (not empty by default for embed convenience)
-}
-
-export interface TweetMediaVariant {
-	bit_rate?: number;
-	content_type: string;
-	url: string;
-}
-export interface TweetMediaItem {
-	//public_metrics: TweetPublicMetrics
-	type: string;
-	media_key: string;
-
-	variants?: TweetMediaVariant[];
-	alt_text?: string;
-	width?: number;
-	height?: number;
-	duration_ms?: number;
-	preview_image_url?: string;
-	url?: string;
-}
-
-// generates a list of embeds (meant to be sent at once) containing the images from a given Tweet
-export function getDiscordEmbedsFromImageTweet(tweet: Tweet) {
-	let imgEmbeds: EmbedBuilder[] = [];
-	tweet.embedImages.forEach(img => {
-		imgEmbeds.push(
-			new EmbedBuilder()
-				.setDescription(tweet.textContent === '' ? null : tweet.textContent)
-				.setAuthor({
-					name: tweet.author.name + '(@' + tweet.author.handle + ')',
-					iconURL: tweet.author.profilePic,
-					url: tweet.postUrl.substring(0, tweet.postUrl.lastIndexOf('/')),
-				})
-				.setImage(img)
-				.setURL(tweet.postUrl)
-				.setTitle('View on Twitter')
-				.setFooter({
-					text: 'Twitter',
-					iconURL: 'https://abs.twimg.com/icons/apple-touch-icon-192x192.png',
-				})
-				.setTimestamp(tweet.creationDate),
-		);
-	});
-
-	return imgEmbeds;
-}
-
 
 ///
 /// messaging
@@ -437,11 +360,11 @@ export function messageMentions(
 	if (user === null) return false;
 
 	if (msg.mentions.repliedUser) {
-		if (typeof user === 'string') {
+		if (typeof user === "string") {
 			if (msg.mentions.repliedUser.id === user) {
 				return true;
 			}
-		} else if ('id' in user) {
+		} else if ("id" in user) {
 			if (msg.mentions.repliedUser.id === user.id) {
 				return true;
 			}
@@ -457,39 +380,35 @@ export function messageMentions(
 export function rollWithAdvantage(
 	min: number,
 	max: number,
-	numAdvantages: number = 2,
-	lowerIsBetter: boolean = false,
+	numAdvantages = 2,
+	lowerIsBetter = false,
 ): number {
 	const rolls: number[] = [];
-	while (numAdvantages > 0) {
-		numAdvantages--;
+	for (let i = 0; i < numAdvantages; i++) {
 		rolls.push(min + Math.random() * (max - min));
 	}
 
 	if (lowerIsBetter) {
 		return Math.min(...rolls);
-	} else {
-		return Math.max(...rolls);
 	}
+	return Math.max(...rolls);
 }
 
 export function rollWithDisadvantage(
 	min: number,
 	max: number,
-	numDisadvantages: number = 2,
-	lowerIsBetter: boolean = false,
+	numDisadvantages = 2,
+	lowerIsBetter = false,
 ): number {
 	const rolls: number[] = [];
-	while (numDisadvantages > 0) {
-		numDisadvantages--;
+	for (let i = 0; i < numDisadvantages; i++) {
 		rolls.push(min + Math.random() * (max - min));
 	}
 
 	if (lowerIsBetter) {
 		return Math.max(...rolls);
-	} else {
-		return Math.min(...rolls);
 	}
+	return Math.min(...rolls);
 }
 
 // advantages/disadvantages: 1 = normal roll, 2 = normal advantage/disadvantage, 3 = double etc.
@@ -498,21 +417,26 @@ export function fullRoll(
 	max: number,
 	advantages: number,
 	disadvantages: number,
-	lowerIsBetter: boolean = false,
+	lowerIsBetter = false,
 ): number {
 	if (advantages === disadvantages) {
 		return min + Math.random() * (max - min);
 	}
-	while (advantages > 1 && disadvantages > 1) {
-		advantages--;
-		disadvantages--;
-	}
 
 	if (advantages > disadvantages) {
-		return rollWithAdvantage(min, max, advantages, lowerIsBetter);
-	} else {
-		return rollWithDisadvantage(min, max, disadvantages, lowerIsBetter);
+		return rollWithAdvantage(
+			min,
+			max,
+			advantages - disadvantages,
+			lowerIsBetter,
+		);
 	}
+	return rollWithDisadvantage(
+		min,
+		max,
+		disadvantages - advantages,
+		lowerIsBetter,
+	);
 }
 
 ///
@@ -520,33 +444,38 @@ export function fullRoll(
 ///
 
 // async delay
-export const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export const delay = (ms: number) =>
+	new Promise((resolve) => setTimeout(resolve, ms));
 
 // returns a time in the format hh:mm:ss from a number of seconds
 export function getTimeFromSeconds(seconds: number): string {
-	let hours = Math.floor(seconds / 3600);
-	let minutes = Math.floor((seconds % 3600) / 60);
-	let secs = Math.floor(seconds % 60);
+	const hours = Math.floor(seconds / 3600);
+	const minutes = Math.floor((seconds % 3600) / 60);
+	const secs = Math.floor(seconds % 60);
 
-	let timeString = '';
+	let timeString = "";
 	if (hours > 0) {
-		timeString += hours + ':';
+		timeString += `${hours}:`;
 	}
 
-	if(hours > 0 && minutes < 10) {
-		timeString += '0';
+	if (hours > 0 && minutes < 10) {
+		timeString += "0";
 	}
-	timeString += minutes + ':';
+	timeString += `${minutes}:`;
 
-	if(secs < 10) {
-		timeString += '0';
+	if (secs < 10) {
+		timeString += "0";
 	}
 	timeString += secs;
 
 	return timeString;
 }
 
-export async function respond(interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>, response: string, ephemeral: boolean = false) {
+export async function respond(
+	interaction: ChatInputCommandInteraction | ButtonInteraction<CacheType>,
+	response: string,
+	ephemeral = false,
+) {
 	if (interaction.replied || interaction.deferred) {
 		interaction.followUp({
 			content: response,
