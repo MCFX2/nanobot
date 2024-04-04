@@ -1,6 +1,6 @@
 import type { Client } from "discord.js";
-import type { MoronModule } from "../moronmodule";
 import { Logger, WarningLevel } from "../logger";
+import type { MoronModule } from "../moronmodule";
 import { init_mmofile } from "./mmofile";
 
 export const mmoLogger: Logger = new Logger("mmo", WarningLevel.Notice);

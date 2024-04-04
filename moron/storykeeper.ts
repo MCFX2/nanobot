@@ -10,10 +10,10 @@ import {
 	type TextChannel,
 	type User,
 } from "discord.js";
-import type { MoronModule } from "./moronmodule";
-import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
 import * as grocheChannels from "../groche-channels.json";
 import { Logger, WarningLevel } from "./logger";
+import type { MoronModule } from "./moronmodule";
+import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
 
 interface StorykeeperConfig {
 	// the role that provides access to the storykeeper system

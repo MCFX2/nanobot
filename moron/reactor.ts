@@ -1,5 +1,6 @@
 import type { ChatInputCommandInteraction, Client, Message } from "discord.js";
 import { Logger, WarningLevel } from "./logger";
+import type { MoronModule } from "./moronmodule";
 import {
 	doesMatch,
 	emoteNameToId,
@@ -8,7 +9,6 @@ import {
 	readCacheFileAsJson,
 	writeCacheFile,
 } from "./util";
-import type { MoronModule } from "./moronmodule";
 
 let client: Client;
 

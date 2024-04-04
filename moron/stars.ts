@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import {
 	type Client,
 	EmbedBuilder,
@@ -8,16 +9,15 @@ import {
 	type ReactionEmoji,
 	type TextChannel,
 } from "discord.js";
-import { iconicMemes, serverLog } from "../groche-channels.json";
-import * as fs from "node:fs";
-import { Logger, WarningLevel } from "./logger";
 import {
-	StarDBFolder,
-	StarDBFile,
 	ReactsToTrigger,
+	StarDBFile,
+	StarDBFolder,
 } from "../config/stars.json";
-import type { FSError } from "./util";
+import { iconicMemes, serverLog } from "../groche-channels.json";
+import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
+import type { FSError } from "./util";
 
 /*
 	Enables dev mode. Differences:

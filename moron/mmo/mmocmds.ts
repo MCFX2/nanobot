@@ -1,6 +1,6 @@
 import { type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 import { getPlayerSave } from "./mmofile";
-import { type BaseSkill, startSkill } from "./mmoskill";
+import { ItemBuffType } from "./mmoitem";
 import {
 	Combat,
 	FishSkill,
@@ -8,7 +8,7 @@ import {
 	MineSkill,
 	WoodChop,
 } from "./mmolistskills";
-import { ItemBuffType } from "./mmoitem";
+import { type BaseSkill, startSkill } from "./mmoskill";
 
 export function levelsCommand(interaction: ChatInputCommandInteraction) {
 	const save = getPlayerSave(interaction.user.id);

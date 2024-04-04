@@ -1,6 +1,6 @@
-import { BaseSkill } from "./mmoskill";
-import { ItemBuffType } from "./mmoitem";
 import type { MMOSaveFile, MMOSkillSave } from "./mmofile";
+import { ItemBuffType } from "./mmoitem";
+import { BaseSkill } from "./mmoskill";
 
 export class WoodchopSkill extends BaseSkill {
 	public constructor() {

@@ -1,4 +1,17 @@
 import {
+	type AudioPlayer,
+	type AudioPlayerState,
+	NoSubscriberBehavior,
+	VoiceConnectionDisconnectReason,
+	VoiceConnectionStatus,
+	createAudioPlayer,
+	createAudioResource,
+	demuxProbe,
+	entersState,
+	getVoiceConnection,
+	joinVoiceChannel,
+} from "@discordjs/voice";
+import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	type ButtonInteraction,
@@ -13,22 +26,12 @@ import {
 	type TextChannel,
 	type VoiceBasedChannel,
 } from "discord.js";
+import isUrl from "is-url";
+import ytdl from "ytdl-core";
+import ytpl from "ytpl";
+import ytsr from "ytsr";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
-import {
-	type AudioPlayer,
-	type AudioPlayerState,
-	NoSubscriberBehavior,
-	VoiceConnectionDisconnectReason,
-	VoiceConnectionStatus,
-	createAudioPlayer,
-	createAudioResource,
-	demuxProbe,
-	entersState,
-	getVoiceConnection,
-	joinVoiceChannel,
-} from "@discordjs/voice";
-import ytdl from "ytdl-core";
 import {
 	delay,
 	getTimeFromSeconds,
@@ -36,9 +39,6 @@ import {
 	readCacheFileAsJson,
 	respond,
 } from "./util";
-import isUrl from "is-url";
-import ytsr from "ytsr";
-import ytpl from "ytpl";
 
 const devMode: boolean = true;
 

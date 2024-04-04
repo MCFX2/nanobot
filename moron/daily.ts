@@ -1,9 +1,9 @@
-import { Logger, WarningLevel } from "./logger";
-import type { Client } from "discord.js";
-import { check_xkcd, init_xkcd } from "./feeds/xkcd";
 import * as cron from "cron";
+import type { Client } from "discord.js";
 import { check_normie, init_normie } from "./feeds/normie";
 import { check_smbc, init_smbc } from "./feeds/smbc";
+import { check_xkcd, init_xkcd } from "./feeds/xkcd";
+import { Logger, WarningLevel } from "./logger";
 
 let client: Client;
 

@@ -1,3 +1,5 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
 	ActivityType,
 	Client,
@@ -9,17 +11,15 @@ import {
 	Routes,
 	type SlashCommandBuilder,
 } from "discord.js";
-import { token, clientID } from "./tokens.json";
-import { Logger, WarningLevel } from "./moron/logger";
-import { Chatty } from "./moron/chatty";
-import { Reactor } from "./moron/reactor";
-import { daily_init } from "./moron/daily";
-import { Stars } from "./moron/stars";
-import * as path from "node:path";
-import * as fs from "node:fs";
-import type { MoronModule } from "./moron/moronmodule";
 import { Bard } from "./moron/bard";
+import { Chatty } from "./moron/chatty";
+import { daily_init } from "./moron/daily";
+import { Logger, WarningLevel } from "./moron/logger";
 import { MMO } from "./moron/mmo/mmo";
+import type { MoronModule } from "./moron/moronmodule";
+import { Reactor } from "./moron/reactor";
+import { Stars } from "./moron/stars";
+import { clientID, token } from "./tokens.json";
 
 export class ExtendedClient extends Client {
 	commands: Collection<

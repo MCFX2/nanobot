@@ -1,6 +1,6 @@
 import type { ChatInputCommandInteraction } from "discord.js";
-import { mmoLogger } from "./mmo";
 import { WarningLevel } from "../logger";
+import { mmoLogger } from "./mmo";
 import {
 	type MMOSaveFile,
 	type MMOSkillSave,

@@ -1,8 +1,8 @@
-import RssParser from "rss-parser";
-import { Logger, WarningLevel } from "../logger";
-import { grocheCentral } from "../../groche-channels.json";
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
-import { readCacheFile, writeCacheFile, getSingleElement } from "../util";
+import RssParser from "rss-parser";
+import { grocheCentral } from "../../groche-channels.json";
+import { Logger, WarningLevel } from "../logger";
+import { getSingleElement, readCacheFile, writeCacheFile } from "../util";
 
 let rssParser: RssParser;
 const logger: Logger = new Logger("feeds/xkcd", WarningLevel.Warning);

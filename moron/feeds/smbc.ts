@@ -1,7 +1,7 @@
-import RssParser from "rss-parser";
-import { Logger, WarningLevel } from "../logger";
-import { serverLog, grocheCentral } from "../../groche-channels.json";
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
+import RssParser from "rss-parser";
+import { grocheCentral, serverLog } from "../../groche-channels.json";
+import { Logger, WarningLevel } from "../logger";
 import { getSingleElement, readCacheFileAsJson, writeCacheFile } from "../util";
 
 const devMode: boolean = false;

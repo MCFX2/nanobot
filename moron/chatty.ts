@@ -1,16 +1,16 @@
 import type { ChatInputCommandInteraction, Client, Message } from "discord.js";
+import { serverLog } from "../groche-channels.json";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import {
 	type StringMatch,
 	doesMatch,
-	stringSet,
 	getEarliestMatch,
 	getLastMatch,
 	readCacheFileAsJson,
+	stringSet,
 	writeCacheFileAsJson,
 } from "./util";
-import { serverLog } from "../groche-channels.json";
 
 interface SimpleChatTrigger {
 	replies: string[];

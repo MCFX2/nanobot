@@ -1,7 +1,7 @@
 import type { Client, TextChannel } from "discord.js";
-import { Logger, WarningLevel } from "../logger";
 import * as request from "request";
 import * as channels from "../../groche-channels.json";
+import { Logger, WarningLevel } from "../logger";
 
 const logger: Logger = new Logger("feeds/normie", WarningLevel.Warning);
 
