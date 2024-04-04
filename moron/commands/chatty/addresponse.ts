@@ -1,42 +1,45 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { registerSimpleChatTrigger } from '../../chatty';
+import {
+	type ChatInputCommandInteraction,
+	SlashCommandBuilder,
+} from "discord.js";
+import { registerSimpleChatTrigger } from "../../chatty";
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('addresponse')
-		.setDefaultMemberPermissions('0')
-		.setDescription('Teach the bot a new thing to say')
-		.addStringOption(option => {
+		.setName("addresponse")
+		.setDefaultMemberPermissions("0")
+		.setDescription("Teach the bot a new thing to say")
+		.addStringOption((option) => {
 			return option
 				.setRequired(true)
 				.setDescription(
-					'A comma-separated list of strings that will trigger the response.',
+					"A comma-separated list of strings that will trigger the response.",
 				)
-				.setName('triggers');
+				.setName("triggers");
 		})
-		.addStringOption(option => {
+		.addStringOption((option) => {
 			return option
 				.setRequired(true)
-				.setDescription('A comma-separated list of possible responses.')
-				.setName('responses');
+				.setDescription("A comma-separated list of possible responses.")
+				.setName("responses");
 		})
-		.addBooleanOption(option => {
+		.addBooleanOption((option) => {
 			return option
-				.setName('ignore_punctuation')
-				.setDescription('(true by default)')
+				.setName("ignore_punctuation")
+				.setDescription("(true by default)")
 				.setRequired(false);
 		})
-		.addBooleanOption(option => {
+		.addBooleanOption((option) => {
 			return option
-				.setName('ignore_capitalization')
-				.setDescription('(true by default)')
+				.setName("ignore_capitalization")
+				.setDescription("(true by default)")
 				.setRequired(false);
 		})
-		.addStringOption(option => {
+		.addStringOption((option) => {
 			return option
-				.setName('append')
+				.setName("append")
 				.setDescription(
-					'to change an existing response, pass a string here that triggers a response.'
+					"to change an existing response, pass a string here that triggers a response.",
 				)
 				.setRequired(false);
 		}),

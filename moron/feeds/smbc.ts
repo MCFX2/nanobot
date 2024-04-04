@@ -1,15 +1,8 @@
 import RssParser from "rss-parser";
 import { Logger, WarningLevel } from "../logger";
 import { serverLog, grocheCentral } from "../../groche-channels.json";
-import HtmlParser from "node-html-parser";
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
-import {
-	FSError,
-	getSingleElement,
-	readCacheFile,
-	readCacheFileAsJson,
-	writeCacheFile,
-} from "../util";
+import { getSingleElement, readCacheFileAsJson, writeCacheFile } from "../util";
 
 const devMode: boolean = false;
 
@@ -91,7 +84,7 @@ export async function check_smbc() {
 			);
 		} else {
 			lastComic = cache.lastComic;
-			if (lastComic == todaysComic.guid) return;
+			if (lastComic === todaysComic.guid) return;
 		}
 
 		lastComic = todaysComic.guid;

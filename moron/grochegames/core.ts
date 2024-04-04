@@ -1,8 +1,8 @@
-import { readCacheFileAsJson, writeCacheFile } from '../util';
-import { AllGrocheGamesItems, InvalidItem } from './items';
+import { readCacheFileAsJson, writeCacheFile } from "../util";
+import { AllGrocheGamesItems, InvalidItem } from "./items";
 
 export interface GrocheGamesItem {
-	[x: string]: any; // allow items to declare additional properties
+	[x: string]: unknown; // allow items to declare additional properties
 	name: string;
 	flavorText: string;
 	strBonus: number;
@@ -38,94 +38,83 @@ export interface GrocheGamesItem {
 }
 
 export class GrocheGamesCombatant {
-	team: string = '';
+	team = "";
 	// channel ID
-	teamId: string = '';
+	teamId = "";
 
-	registrationComplete: boolean = false;
+	registrationComplete = false;
 	// not the most elegant solution but the easiest
 	backgroundMsgIds: string[] = [];
 
-	name: string = 'unnamed';
-	pronounHe: string = 'he';
-	pronounHim: string = 'him';
+	name = "unnamed";
+	pronounHe = "he";
+	pronounHim = "him";
 	// empty for bots, otherwise it's the discord user ID
-	id: string = '';
-	picUrl: string = '';
-	picDeadUrl: string = '';
-	deathQuote: string = '';
+	id = "";
+	picUrl = "";
+	picDeadUrl = "";
+	deathQuote = "";
 
-	maxHP: number = 0;
-	curHP: number = 0;
-	baseMoney: number = 0;
-	baseStrength: number = 0;
-	baseSpeed: number = 0;
-	baseToughness: number = 0;
+	maxHP = 0;
+	curHP = 0;
+	baseMoney = 0;
+	baseStrength = 0;
+	baseSpeed = 0;
+	baseToughness = 0;
 
 	// curses
-	hasShortCircuit: boolean = false;
-	hasExpertMode: boolean = false;
-	hasMoronicRage: boolean = false;
+	hasShortCircuit = false;
+	hasExpertMode = false;
+	hasMoronicRage = false;
 
 	// blessings
-	hasInventive: boolean = false;
-	hasLuck: boolean = false;
-	hasDeliverance: boolean = false;
+	hasInventive = false;
+	hasLuck = false;
+	hasDeliverance = false;
 
 	inventory: GrocheGamesItem[] = [];
 
 	public get strength(): number {
-		let strengthMod: number = 0;
-		this.inventory.forEach(item => (strengthMod += item.strBonus));
-		return strengthMod + this.baseStrength;
+		return this.inventory.reduce((prev, cur) => {
+			return prev + cur.strBonus;
+		}, this.baseStrength);
 	}
 
 	public get speed(): number {
-		let speedMod: number = 0;
-		this.inventory.forEach(item => (speedMod += item.spdBonus));
-		return speedMod + this.baseSpeed;
+		return this.inventory.reduce((prev, cur) => {
+			return prev + cur.spdBonus;
+		}, this.baseSpeed);
 	}
 
 	public get toughness(): number {
-		let toughMod: number = 0;
-		this.inventory.forEach(item => (toughMod += item.tghBonus));
-		return toughMod + this.baseToughness;
+		return this.inventory.reduce((prev, cur) => {
+			return prev + cur.tghBonus;
+		}, this.baseToughness);
 	}
 
 	public get money(): number {
-		let moneyMod: number = 0;
-		this.inventory.forEach(item => (moneyMod += item.mBonus));
-		return moneyMod + this.baseMoney;
+		return this.inventory.reduce((prev, cur) => {
+			return prev + cur.mBonus;
+		}, this.baseMoney);
 	}
 
 	public get totalAdvantage(): number {
-		let advantage = 1;
-
-		if (this.hasLuck) ++advantage;
-
-		this.inventory.forEach(item =>
-			item.givesAdvantage && item.givesAdvantage() ? advantage++ : null,
+		return this.inventory.reduce(
+			(prev, cur) => {
+				return prev + (cur.givesAdvantage?.() ? 1 : 0);
+			},
+			this.hasLuck ? 2 : 1,
 		);
-
-		return advantage;
 	}
 
 	public get totalDisadvantage(): number {
-		let disadvantage = 1;
-
-		if (this.hasLuck) ++disadvantage;
-
-		this.inventory.forEach(item =>
-			item.givesDisadvantage && item.givesDisadvantage()
-				? disadvantage++
-				: null,
-		);
-
-		return disadvantage;
+		return this.inventory.reduce((prev, cur) => {
+			return prev + (cur.givesAdvantage?.() ? 1 : 0);
+		}, 1);
 	}
 }
 
-const combatantsFile = 'grochegames-combatants.json';
+const combatantsFile = "grochegames-combatants.json";
 class GrocheGamesCore {
 	// undefined is used here as a signal value to indicate we haven't initialized from file yet
 	private grocheCombatants?: GrocheGamesCombatant[] = undefined;
@@ -146,14 +135,17 @@ class GrocheGamesCore {
 	// since inventory data doesn't include callbacks
 	// call this to refresh the inventory with the items found in AllGrocheGamesItems
 	private refreshInventories() {
-		this.grocheCombatants?.forEach(combatant => {
+		if (!this.grocheCombatants) {
+			return;
+		}
+		for (const combatant of this.grocheCombatants) {
 			combatant.inventory = combatant.inventory.map(
-				storedItem =>
+				(storedItem) =>
 					AllGrocheGamesItems.find(
-						trueItem => trueItem.name === storedItem.name,
+						(trueItem) => trueItem.name === storedItem.name,
 					) ?? InvalidItem, // InvalidItem should only be possible when an item in the master list is removed or renamed mid-game
 			);
-		});
+		}
 	}
 
 	public set combatants(list: GrocheGamesCombatant[]) {
@@ -165,9 +157,9 @@ class GrocheGamesCore {
 				Buffer.from(JSON.stringify(this.grocheCombatants, null, 1)),
 			);
 		} else {
-			writeCacheFile(combatantsFile, Buffer.from(''));
+			writeCacheFile(combatantsFile, Buffer.from(""));
 		}
 	}
 }
 
-export let grocheGamesCore: GrocheGamesCore = new GrocheGamesCore();
+export const grocheGamesCore: GrocheGamesCore = new GrocheGamesCore();

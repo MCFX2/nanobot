@@ -1,14 +1,8 @@
 import RssParser from "rss-parser";
 import { Logger, WarningLevel } from "../logger";
-import { serverLog, grocheCentral } from "../../groche-channels.json";
-import HtmlParser from "node-html-parser";
+import { grocheCentral } from "../../groche-channels.json";
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
-import {
-	FSError,
-	readCacheFile,
-	writeCacheFile,
-	getSingleElement,
-} from "../util";
+import { readCacheFile, writeCacheFile, getSingleElement } from "../util";
 
 let rssParser: RssParser;
 const logger: Logger = new Logger("feeds/xkcd", WarningLevel.Warning);
@@ -76,7 +70,7 @@ export async function check_xkcd() {
 
 	lastComic = JSON.parse(cache.toString()).lastComic;
 
-	if (todaysComic.guid == lastComic) {
+	if (todaysComic.guid === lastComic) {
 		return;
 	}
 
@@ -127,7 +121,7 @@ export async function check_xkcd() {
 		.setFields([
 			{
 				name: todaysComic.title,
-				value: "[Explain the joke](" + explainUrl + ")",
+				value: `[Explain the joke](${explainUrl})`,
 				inline: false,
 			},
 		])

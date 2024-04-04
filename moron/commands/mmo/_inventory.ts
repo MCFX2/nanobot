@@ -1,10 +1,11 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-
+import {
+	type ChatInputCommandInteraction,
+	SlashCommandBuilder,
+} from "discord.js";
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("inventory")
-        .setDescription("Check your inventory"),
-        async execute(interaction: ChatInputCommandInteraction) {
-        }
-}
+	data: new SlashCommandBuilder()
+		.setName("inventory")
+		.setDescription("Check your inventory"),
+	async execute(interaction: ChatInputCommandInteraction) {},
+};
