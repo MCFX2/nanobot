@@ -1,20 +1,20 @@
-import RssParser from 'rss-parser';
-import { Logger, WarningLevel } from '../logger';
-import { serverLog, grocheCentral } from '../../groche-channels.json';
-import HtmlParser from 'node-html-parser';
-import { Client, EmbedBuilder, TextBasedChannel } from 'discord.js';
+import RssParser from "rss-parser";
+import { Logger, WarningLevel } from "../logger";
+import { serverLog, grocheCentral } from "../../groche-channels.json";
+import HtmlParser from "node-html-parser";
+import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
 import {
-	Error,
+	FSError,
 	getSingleElement,
 	readCacheFile,
 	readCacheFileAsJson,
 	writeCacheFile,
-} from '../util';
+} from "../util";
 
 const devMode: boolean = false;
 
 const logger: Logger = new Logger(
-	'feeds/smbc',
+	"feeds/smbc",
 	devMode ? WarningLevel.Notice : WarningLevel.Warning,
 );
 
@@ -30,34 +30,36 @@ export function init_smbc(clientInstance: Client) {
 export async function check_smbc() {
 	if (!rssParser) {
 		logger.log(
-			'Tried to check for daily update when we were not initialized!',
+			"Tried to check for daily update when we were not initialized!",
 			WarningLevel.Error,
 		);
 		return;
 	}
 
-	let feed = await rssParser.parseURL('https://www.smbc-comics.com/comic/rss');
+	const feed = await rssParser.parseURL(
+		"https://www.smbc-comics.com/comic/rss",
+	);
 
 	const todaysComic = feed.items[0];
 
-	const imgData = getSingleElement(todaysComic.content, 'img', logger);
+	const imgData = getSingleElement(todaysComic.content, "img", logger);
 
 	if (!imgData) return;
 
-	let imgUrl = imgData.getAttribute('src');
+	const imgUrl = imgData.getAttribute("src");
 
-	const textData = getSingleElement(todaysComic.content, 'p', logger);
+	const textData = getSingleElement(todaysComic.content, "p", logger);
 
 	if (!textData) return;
 
 	let pubDate = todaysComic.pubDate ? new Date(todaysComic.pubDate) : undefined;
 
 	let comicTitle = todaysComic.title?.replace(
-		'Saturday Morning Breakfast Cereal - ',
-		'',
+		"Saturday Morning Breakfast Cereal - ",
+		"",
 	);
 
-	let altText = textData.text.replace('Hovertext:', '');
+	let altText = textData.text.replace("Hovertext:", "");
 
 	logger.log(comicTitle);
 	logger.log(imgUrl);
@@ -78,13 +80,13 @@ export async function check_smbc() {
 	// determine whether this comic was already sent
 
 	if (!devMode) {
-		let lastComic: string = '';
+		let lastComic = "";
 
-		let cache = readCacheFileAsJson('smbc.json');
+		const cache = readCacheFileAsJson("smbc.json");
 
 		if (!cache) {
 			logger.log(
-				'Failed to load cache data for some reason! New cache will be created',
+				"Failed to load cache data for some reason! New cache will be created",
 				WarningLevel.Notice,
 			);
 		} else {
@@ -97,7 +99,7 @@ export async function check_smbc() {
 		// write back to file
 
 		writeCacheFile(
-			'smbc.json',
+			"smbc.json",
 			Buffer.from(JSON.stringify({ lastComic: lastComic })),
 		);
 	}
@@ -106,7 +108,7 @@ export async function check_smbc() {
 
 	if (!altText) {
 		logger.log("No alt text for today's comic!", WarningLevel.Warning);
-		altText = '';
+		altText = "";
 	}
 
 	if (!pubDate) {
@@ -120,7 +122,7 @@ export async function check_smbc() {
 	if (!comicTitle) {
 		logger.log("No title for today's comic! ", WarningLevel.Warning);
 
-		comicTitle = 'Untitled';
+		comicTitle = "Untitled";
 	}
 
 	// send comic
@@ -129,11 +131,11 @@ export async function check_smbc() {
 		devMode ? serverLog : grocheCentral,
 	)) as TextBasedChannel;
 
-	let smbcEmbed = new EmbedBuilder()
+	const smbcEmbed = new EmbedBuilder()
 		.setAuthor({
-			name: 'Saturday Morning Breakfast Cereal',
-			url: 'https://www.smbc-comics.com/',
-			iconURL: 'https://www.smbc-comics.com/images/moblogo.png',
+			name: "Saturday Morning Breakfast Cereal",
+			url: "https://www.smbc-comics.com/",
+			iconURL: "https://www.smbc-comics.com/images/moblogo.png",
 		})
 		.setTitle(comicTitle)
 		.setImage(imgUrl)

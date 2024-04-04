@@ -38,7 +38,7 @@ const logger: Logger = new Logger("utils", WarningLevel.Warning);
 ///
 
 //i shouldn't have to do this
-export declare interface Error {
+export declare interface FSError {
 	name: string;
 	message: string;
 	stack?: string;
@@ -224,7 +224,7 @@ function createCacheFile(filename: string) {
 	try {
 		fs.writeFileSync(settings.cacheDir + filename, "");
 	} catch (error: unknown) {
-		if ((error as Error).code === "ENOENT") {
+		if ((error as FSError).code === "ENOENT") {
 			fs.mkdirSync(settings.cacheDir);
 			fs.writeFileSync(settings.cacheDir + filename, "");
 		} else {
@@ -237,7 +237,7 @@ export function writeCacheFile(filename: string, contents: Buffer) {
 	try {
 		fs.writeFileSync(settings.cacheDir + filename, contents);
 	} catch (error: unknown) {
-		if ((error as Error).code === "ENOENT") {
+		if ((error as FSError).code === "ENOENT") {
 			createCacheFile(filename);
 			fs.writeFileSync(settings.cacheDir + filename, contents);
 		}
@@ -252,7 +252,7 @@ export function readCacheFile(filename: string): Buffer | undefined {
 		return fs.readFileSync(settings.cacheDir + filename);
 	} catch (error: unknown) {
 		//create new db file if it does not already exist
-		if ((error as Error).code === "ENOENT") {
+		if ((error as FSError).code === "ENOENT") {
 			createCacheFile(filename);
 		} else {
 			logger.log(error, WarningLevel.Error);

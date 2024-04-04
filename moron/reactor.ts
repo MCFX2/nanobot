@@ -1,5 +1,5 @@
-import { ChatInputCommandInteraction, Client, Message } from 'discord.js';
-import { Logger, WarningLevel } from './logger';
+import type { ChatInputCommandInteraction, Client, Message } from "discord.js";
+import { Logger, WarningLevel } from "./logger";
 import {
 	doesMatch,
 	emoteNameToId,
@@ -7,15 +7,15 @@ import {
 	messageMentions,
 	readCacheFileAsJson,
 	writeCacheFile,
-} from './util';
-import { MoronModule } from './moronmodule';
+} from "./util";
+import type { MoronModule } from "./moronmodule";
 
 let client: Client;
 
-let logger: Logger = new Logger('reactor', WarningLevel.Warning);
+const logger: Logger = new Logger("reactor", WarningLevel.Warning);
 
 export const Reactor: MoronModule = {
-	name: 'reactor',
+	name: "reactor",
 	onInit: reactor_init,
 	onMessageSend: reactor_onMessageSend,
 };
@@ -23,14 +23,14 @@ export const Reactor: MoronModule = {
 let reactions: ReactTrigger[];
 
 function updateCache() {
-	const possibleEmojis: string[] = [...new Set(reactions.map(r => r.emoji))];
+	const possibleEmojis: string[] = [...new Set(reactions.map((r) => r.emoji))];
 
-	let emojiIndex: any = {};
+	const emojiIndex: { [key: string]: (ReactCondition | string)[] } = {};
 
-	possibleEmojis.forEach(emoji => {
-		const matches = reactions.filter(reaction => reaction.emoji === emoji);
-		matches.forEach(match => {
-			const alreadyDefined = emojiIndex.hasOwnProperty(match.emoji);
+	for (const emoji of possibleEmojis) {
+		const matches = reactions.filter((reaction) => reaction.emoji === emoji);
+		for (const match of matches) {
+			const alreadyDefined = Object.hasOwn(emojiIndex, match.emoji);
 			if (!alreadyDefined) {
 				emojiIndex[match.emoji] = [];
 				emojiIndex[match.emoji].push(
@@ -41,7 +41,7 @@ function updateCache() {
 								word: match.word,
 								ignoreCase: match.ignoreCase,
 								ignoreSymb: match.ignoreSymb,
-						  },
+							},
 				);
 			} else {
 				emojiIndex[match.emoji].push(
@@ -52,15 +52,15 @@ function updateCache() {
 								word: match.word,
 								ignoreCase: match.ignoreCase,
 								ignoreSymb: match.ignoreSymb,
-						  },
+							},
 				);
 			}
-		});
-	});
+		}
+	}
 
 	writeCacheFile(
-		'reactor.json',
-		Buffer.from(JSON.stringify(emojiIndex, null, '\t')),
+		"reactor.json",
+		Buffer.from(JSON.stringify(emojiIndex, null, "\t")),
 	);
 }
 
@@ -69,13 +69,13 @@ async function reactor_init(clientInstance: Client) {
 
 	// load reaction triggers
 	reactions = [];
-	const loadedReactions = readCacheFileAsJson('reactor.json');
+	const loadedReactions = readCacheFileAsJson("reactor.json");
 	if (!loadedReactions) {
-		logger.log('Failed to load reaction list', WarningLevel.Error);
+		logger.log("Failed to load reaction list", WarningLevel.Error);
 	} else {
-		Object.keys(loadedReactions).forEach(emoji => {
-			loadedReactions[emoji].forEach((trigger: string | ReactCondition) => {
-				if (typeof trigger === 'string') {
+		for (const emoji in loadedReactions) {
+			for (const trigger of loadedReactions[emoji]) {
+				if (typeof trigger === "string") {
 					reactions.push({ emoji: emoji, word: trigger });
 				} else {
 					reactions.push({
@@ -85,8 +85,8 @@ async function reactor_init(clientInstance: Client) {
 						ignoreSymb: trigger.ignoreSymb,
 					});
 				}
-			});
-		});
+			}
+		}
 	}
 }
 
@@ -98,18 +98,17 @@ async function reactWithEmoji(
 	if (emoji) {
 		msg.react(emoji);
 		return true;
-	} else {
-		logger.log('Unable to get emoji ' + emojiName, WarningLevel.Error);
-		return false;
 	}
+	logger.log(`Unable to get emoji ${emojiName}`, WarningLevel.Error);
+	return false;
 }
 
 function emojiBuzzword(
 	msg: Message,
 	word: string,
 	emoji: string,
-	ignoreSymb: boolean = true,
-	ignoreCase: boolean = true,
+	ignoreSymb = true,
+	ignoreCase = true,
 ): boolean {
 	if (
 		doesMatch(msg.content, {
@@ -120,7 +119,7 @@ function emojiBuzzword(
 	) {
 		if (messageMentions(msg, client.user) || Math.random() < 0.2) {
 			logger.log(
-				'reacting to message with ' + emoji + ' because it contains ' + word,
+				`reacting to message with ${emoji} because it contains ${word}`,
 			);
 			reactWithEmoji(msg, emoji);
 		}
@@ -133,8 +132,8 @@ function asciiBuzzword(
 	msg: Message,
 	word: string,
 	emoji: string,
-	ignoreSymb: boolean = true,
-	ignoreCase: boolean = true,
+	ignoreSymb = true,
+	ignoreCase = true,
 ): boolean {
 	if (
 		doesMatch(msg.content, {
@@ -145,7 +144,7 @@ function asciiBuzzword(
 	) {
 		if (messageMentions(msg, client.user) || Math.random() < 0.2) {
 			logger.log(
-				'reacting to message with ' + emoji + ' because it contains ' + word,
+				`reacting to message with ${emoji} because it contains ${word}`,
 			);
 			msg.react(emoji);
 		}
@@ -185,27 +184,29 @@ export async function registerNewReaction(
 	interaction: ChatInputCommandInteraction,
 ) {
 	const checkSplit =
-		interaction.options.getBoolean('ignore_punctuation') ?? true;
+		interaction.options.getBoolean("ignore_punctuation") ?? true;
 	// verify trigger (must be unique)
-	const word = interaction.options.getString('text', true);
+	const word = interaction.options.getString("text", true);
 
 	let words: string[] = [];
 	if (checkSplit) {
-		words = word.split(',');
-		if (!reactions.every(trigger => words.every(wrd => wrd !== trigger.word))) {
-			await interaction.reply('you lost me ngl');
+		words = word.split(",");
+		if (
+			!reactions.every((trigger) => words.every((wrd) => wrd !== trigger.word))
+		) {
+			await interaction.reply("you lost me ngl");
 			interaction.followUp({
 				content:
-					'one of the words you provided already triggers a different reaction',
+					"one of the words you provided already triggers a different reaction",
 				options: { ephemeral: true },
 			});
 			return;
 		}
 	} else {
-		if (!reactions.every(trigger => trigger.word !== word)) {
+		if (!reactions.every((trigger) => trigger.word !== word)) {
 			await interaction.reply("my self esteem isn't THAT low");
 			interaction.followUp({
-				content: 'the word you provided already triggers a different reaction',
+				content: "the word you provided already triggers a different reaction",
 				options: { ephemeral: true },
 			});
 			return;
@@ -215,13 +216,13 @@ export async function registerNewReaction(
 	}
 
 	// verify reaction
-	const react = interaction.options.getString('react', true).trim();
+	const react = interaction.options.getString("react", true).trim();
 	// verify react is valid
 	try {
-		const msg = await interaction.reply('hmmm...');
-		const msg2 = await interaction.followUp('let me check');
+		const msg = await interaction.reply("hmmm...");
+		const msg2 = await interaction.followUp("let me check");
 		if (msg && msg2) {
-			if (react.startsWith('<')) {
+			if (react.startsWith("<")) {
 				if (!(await reactWithEmoji(msg2, react))) {
 					await msg2.delete();
 					await interaction.editReply(
@@ -229,59 +230,51 @@ export async function registerNewReaction(
 					);
 				} else {
 					await msg2.delete();
-					await interaction.editReply('aight, you got it boss');
+					await interaction.editReply("aight, you got it boss");
 					logger.log(
-						'user ' +
-							interaction.user.username +
-							' registered new react(s) ' +
-							react,
+						`user ${interaction.user.username} registered new react(s) ${react}`,
 					);
-					words.forEach(entry => {
+					for (const entry of words) {
 						addNewReact(
 							react,
 							entry,
-							interaction.options.getBoolean('ignore_capitalization') ??
+							interaction.options.getBoolean("ignore_capitalization") ??
 								undefined,
-							interaction.options.getBoolean('ignore_punctuation') ?? undefined,
+							interaction.options.getBoolean("ignore_punctuation") ?? undefined,
 						);
-					});
+					}
 					updateCache();
 				}
 			} else {
-				await msg2.react(react).catch(async (err: any) => {
+				await msg2.react(react).catch(async (_err: unknown) => {
 					await msg2.delete();
 				});
 				logger.log(
-					'user ' +
-						interaction.user.username +
-						' registered new react(s) ' +
-						react,
+					`user ${interaction.user.username} registered new react(s) ${react}`,
 				);
 				await msg2.delete();
-				await interaction.editReply('k');
+				await interaction.editReply("k");
 
-				words.forEach(entry => {
+				for (const entry of words) {
 					addNewReact(
 						react,
 						entry,
-						interaction.options.getBoolean('ignore_capitalization') ??
+						interaction.options.getBoolean("ignore_capitalization") ??
 							undefined,
-						interaction.options.getBoolean('ignore_punctuation') ?? undefined,
+						interaction.options.getBoolean("ignore_punctuation") ?? undefined,
 					);
 
-					logger.log('trigger: ' + entry);
-				});
+					logger.log(`trigger: ${entry}`);
+				}
 				updateCache();
 			}
 		} else {
-			logger.log('failed to send response', WarningLevel.Error);
+			logger.log("failed to send response", WarningLevel.Error);
 		}
-	} catch (err: any) {
+	} catch (err: unknown) {
 		logger.log(err, WarningLevel.Error);
 		interaction.editReply(
-			'this bitch tryna make me react with ' +
-				react +
-				' like thats a real emote',
+			`this bitch tryna make me react with ${react} like thats a real emote`,
 		);
 	}
 }
@@ -289,28 +282,28 @@ export async function registerNewReaction(
 export function reactor_onMessageSend(msg: Message) {
 	if (!client.user) {
 		logger.log(
-			'Tried to receive message when client was not initialized!',
+			"Tried to receive message when client was not initialized!",
 			WarningLevel.Error,
 		);
 		return;
 	}
 
-	reactions.every(reaction => {
-		!reaction.emoji.startsWith('<')
+	reactions.every((reaction) => {
+		!reaction.emoji.startsWith("<")
 			? asciiBuzzword(
 					msg,
 					reaction.word,
 					reaction.emoji,
 					reaction.ignoreSymb,
 					reaction.ignoreCase,
-			  )
+				)
 			: emojiBuzzword(
 					msg,
 					reaction.word,
 					reaction.emoji,
 					reaction.ignoreSymb,
 					reaction.ignoreCase,
-			  );
+				);
 		return true;
 	});
 }

@@ -1,8 +1,8 @@
 export const forceTraceMode: boolean = true;
 
-const warningLevels = ['', '[Info] ', '[Warning] ', '[ERROR] '];
+const warningLevels = ["", "[Info] ", "[Warning] ", "[ERROR] "];
 
-export const enum WarningLevel {
+export enum WarningLevel {
 	Notice = 0,
 	Info = 1,
 	Warning = 2,
@@ -19,9 +19,7 @@ export class Logger {
 	moduleName: string;
 	minWarningLevel: number;
 
-	log(msg: string | undefined, warningLevel?: number) {
-		if (!warningLevel) warningLevel = 0;
-
+	log(msg: unknown | undefined, warningLevel = 0) {
 		if (
 			forceTraceMode ||
 			(warningLevel >= this.minWarningLevel &&
@@ -29,17 +27,15 @@ export class Logger {
 		) {
 			const now = new Date();
 			console.log(
-				'[' +
-					now.getHours().toString().padStart(2, '0') +
-					':' +
-					now.getMinutes().toString().padStart(2, '0') +
-					':' +
-					now.getSeconds().toString().padStart(2, '0') +
-					'] [moron/' +
-					this.moduleName +
-					'] ' +
-					warningLevels[warningLevel] +
-					msg ?? 'undefined',
+				`[${now.getHours().toString().padStart(2, "0")}:${now
+					.getMinutes()
+					.toString()
+					.padStart(2, "0")}:${now
+					.getSeconds()
+					.toString()
+					.padStart(2, "0")}] [moron/${this.moduleName}] ${
+					warningLevels[warningLevel]
+				}${msg}` ?? "undefined",
 			);
 		}
 	}
