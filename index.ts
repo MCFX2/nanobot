@@ -79,7 +79,6 @@ function getAllCommands(directory: string) {
 		} else if (abs.endsWith(".ts")) {
 			commandFiles.push(abs);
 		}
-		return;
 	}
 	return commandFiles;
 }
