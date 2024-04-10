@@ -155,8 +155,8 @@ const player: AudioPlayer = createAudioPlayer({
 	isReconnecting = false;
 });
 
-function getCurrentStream(guild: Guild, channelId: string, create = true) {
-	const connection = getVoiceConnection(channelId);
+function getCurrentStream(guild: Guild, channelId: string, create: boolean) {
+	const connection = getVoiceConnection(guild.id);
 	if (!connection && create) {
 		const newConnection = joinVoiceChannel({
 			channelId: channelId,
@@ -235,6 +235,7 @@ async function playStream() {
 		);
 
 		if (!nowPlaying) {
+			logger.log(new Error().stack, WarningLevel.Error);
 			logger.log(
 				"nowPlaying became undefined while trying to play stream",
 				WarningLevel.Error,
@@ -275,7 +276,7 @@ function streamCallback(_: AudioPlayerState, newStatus: AudioPlayerState) {
 
 		logger.log(`Finished playing ${nowPlaying.title}`);
 		const channel = nowPlaying.interactionChannel;
-		const stream = getCurrentStream(channel.guild, channel.id);
+		const stream = getCurrentStream(channel.guild, channel.id, false);
 		if (!stream) {
 			logger.log(
 				"stream was undefined when audio player finished, this should never happen",
@@ -675,7 +676,7 @@ function advanceQueue(): boolean {
 		);
 		return false;
 	}
-	const stream = getCurrentStream(channel.guild, channel.id);
+	const stream = getCurrentStream(channel.guild, channel.id, false);
 	nowPlaying = undefined;
 	stream?.destroy();
 	return false;
