@@ -20,6 +20,7 @@ import type { MoronModule } from "./moron/moronmodule";
 import { Reactor } from "./moron/reactor";
 import { Stars } from "./moron/stars";
 import { clientID, token } from "./tokens.json";
+import { PingRole } from "./moron/pingroles";
 
 export class ExtendedClient extends Client {
 	commands: Collection<
@@ -125,7 +126,7 @@ loadAllCommands();
 
 // init modules
 
-const modules: MoronModule[] = [Reactor, Chatty, Stars, Bard, MMO];
+const modules: MoronModule[] = [Reactor, Chatty, Stars, Bard, MMO, PingRole];
 
 type InitCallback = (client: Client) => Promise<void>;
 
@@ -236,14 +237,19 @@ client.on("messageCreate", async (msg) => {
 ///
 
 client.on("messageReactionAdd", async (react, user) => {
-	if (react.me) return;
+	console.log("reaction added");
+	if (!client.user || user.id === client.user.id) return;
+	console.log("loading reaction data...");
 
 	const fullReact = react.partial ? await react.fetch() : react;
 	const fullUser = user.partial ? await user.fetch() : user;
 
+	console.log("fetched reaction data");
+
 	for (const module of modules) {
 		try {
 			if (module.onReactionAdd) {
+				console.log("handing off reaction to " + module.name);
 				module.onReactionAdd(fullReact, fullUser);
 			}
 		} catch (err: unknown) {
@@ -254,8 +260,6 @@ client.on("messageReactionAdd", async (react, user) => {
 });
 
 client.on("messageReactionRemove", async (react) => {
-	if (react.me) return;
-
 	const fullReact = react.partial ? await react.fetch() : react;
 
 	for (const module of modules) {

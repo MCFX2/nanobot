@@ -156,6 +156,12 @@ async function stars_onStarAdded(reaction: MessageReaction) {
 		if (devMode || reaction.count >= ReactsToTrigger) {
 			pinMessage(clientInstance, reaction.emoji, reaction.message);
 		}
+
+		if (!reaction.me) {
+			if (Math.random() < 0.25) {
+				reaction.message.react(reaction.emoji);
+			}
+		}
 	}
 }
 
