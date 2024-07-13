@@ -22,12 +22,10 @@ import {
 	EmbedBuilder,
 	type Guild,
 	GuildMember,
-	Interaction,
 	type TextChannel,
 	type VoiceBasedChannel,
 } from "discord.js";
 import isUrl from "is-url";
-import ytdl from "ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
 import { Logger, WarningLevel } from "./logger";
@@ -39,6 +37,8 @@ import {
 	readCacheFileAsJson,
 	respond,
 } from "./util";
+import type internal from "node:stream";
+import ytdl from "@distube/ytdl-core";
 
 const devMode: boolean = true;
 
@@ -108,6 +108,7 @@ async function SongEntryFromUrl(
 			"Could not get info from url - something is wrong with the url checks up to this point",
 			WarningLevel.Error,
 		);
+		logger.log(`attempted to load song from url: ${url}`, WarningLevel.Error);
 		return undefined;
 	}
 }
@@ -224,16 +225,40 @@ async function playStream() {
 		return;
 	}
 
+	let ytdlResult: internal.Readable;
 	try {
-		const { stream, type } = await demuxProbe(
-			ytdl(nowPlaying.url, {
-				filter: "audioonly",
-				quality: "highestaudio",
-				highWaterMark: 1024 * 1024 * 32, // 32MB
-				begin: nowPlaying.currentProgressMs ? nowPlaying.currentProgressMs : 0,
-			}),
+		ytdlResult = ytdl(nowPlaying.url, {
+			filter: "audioonly",
+			quality: "highestaudio",
+			highWaterMark: 1024 * 1024 * 32, // 32MB
+			begin: nowPlaying.currentProgressMs ? nowPlaying.currentProgressMs : 0,
+		});
+	} catch (e: unknown) {
+		logger.log(
+			`ytdl failed to get stream for url ${nowPlaying.url}`,
+			WarningLevel.Error,
 		);
+		logger.log((e as Error).stack, WarningLevel.Error);
+		logger.log((e as Error).message, WarningLevel.Error);
+		return;
+	}
 
+	const info = await demuxProbe(ytdlResult).catch((e: unknown) => {
+		logger.log(
+			`demuxProbe failed to get info for url ${nowPlaying?.url}`,
+			WarningLevel.Error,
+		);
+		logger.log(`${JSON.stringify(ytdlResult)}`);
+		logger.log((e as Error).stack, WarningLevel.Error);
+		logger.log((e as Error).message, WarningLevel.Error);
+		return undefined;
+	});
+
+	if (!info) {
+		return;
+	}
+
+	try {
 		if (!nowPlaying) {
 			logger.log(new Error().stack, WarningLevel.Error);
 			logger.log(
@@ -243,9 +268,9 @@ async function playStream() {
 			return;
 		}
 
-		const resource = createAudioResource(stream, {
+		const resource = createAudioResource(info.stream, {
 			inlineVolume: true,
-			inputType: type,
+			inputType: info.type,
 			silencePaddingFrames: 1,
 		});
 
