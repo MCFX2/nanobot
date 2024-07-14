@@ -111,48 +111,45 @@ async function fixRoles(message: Message) {
 	const reactions = message.reactions.cache;
 
 	for (const r of config.roles) {
-		logger.log(`checking role ${r.roleId}`, WarningLevel.Notice);
 		const guildRole = await guild.roles.fetch(r.roleId);
 		if (!guildRole) {
 			logger.log(
 				`Encountered unknown role ID ${r.roleId} when fetching roles`,
-				WarningLevel.Error,
+				WarningLevel.Warning,
 			);
 			continue;
 		}
 
 		// check members of the role
 		const members = guildRole.members;
-		const userIdsToRemove: string[] = [];
 
-		logger.log(`removing stale members of ${r.roleId}`, WarningLevel.Notice);
 		for (const [id, _member] of members) {
 			// check if the member has reacted
 			let hasReacted = false;
 			for (const [emojiId, reaction] of reactions) {
 				if (reaction.emoji.id === r.emojiId) {
-					hasReacted = true;
+					const users = await reaction.users.fetch();
+					if (users.has(id)) {
+						hasReacted = true;
+					}
 					break;
 				}
 			}
 
 			if (!hasReacted) {
-				userIdsToRemove.push(id);
+				const member = await guild.members.fetch(id);
+				if (!member) {
+					logger.log(
+						`Could not find member with ID ${id}`,
+						WarningLevel.Warning,
+					);
+					continue;
+				}
+
+				await member.roles.remove(guildRole);
 			}
 		}
 
-		// remove the role from members who haven't reacted
-		for (const id of userIdsToRemove) {
-			const member = await guild.members.fetch(id);
-			if (!member) {
-				logger.log(`Could not find member with ID ${id}`, WarningLevel.Error);
-				continue;
-			}
-
-			await member.roles.remove(guildRole);
-		}
-
-		logger.log(`adding missing members of ${r.roleId}`, WarningLevel.Notice);
 		// check for members who have reacted but don't have the role
 		for (const [emojiId, reaction] of reactions) {
 			if (reaction.emoji.id !== r.emojiId) {
@@ -163,7 +160,10 @@ async function fixRoles(message: Message) {
 			for (const [id, _user] of users) {
 				const member = await guild.members.fetch(id);
 				if (!member) {
-					logger.log(`Could not find member with ID ${id}`, WarningLevel.Error);
+					logger.log(
+						`Could not find member with ID ${id}`,
+						WarningLevel.Warning,
+					);
 					continue;
 				}
 
