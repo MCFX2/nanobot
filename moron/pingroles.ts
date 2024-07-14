@@ -123,12 +123,15 @@ async function fixRoles(message: Message) {
 		// check members of the role
 		const members = guildRole.members;
 		const reaction = reactions.get(r.emojiId);
-		const reactedUsers =
-			reaction!.users.cache ?? (await reaction?.users.fetch());
 
 		for (const [id, _member] of members) {
 			// check if the member has reacted
-			if (reactedUsers?.has(id)) {
+			if (
+				!reaction ||
+				!(
+					reaction.users.cache.get(id) ?? (await reaction.users.fetch()).has(id)
+				)
+			) {
 				const member = members.get(id);
 				if (!member) {
 					logger.log(
@@ -138,7 +141,7 @@ async function fixRoles(message: Message) {
 					continue;
 				}
 
-				await member.roles.remove(guildRole);
+				member.roles.remove(guildRole);
 			}
 		}
 
@@ -147,14 +150,15 @@ async function fixRoles(message: Message) {
 		// check for members who have reacted but don't have the role
 		const users = await reaction.users.fetch();
 		for (const [id, _user] of users) {
-			const member = await guild.members.fetch(id);
+			const member =
+				guild.members.cache.get(id) ?? (await guild.members.fetch(id));
 			if (!member) {
 				logger.log(`Could not find member with ID ${id}`, WarningLevel.Warning);
 				continue;
 			}
 
 			if (!member.roles.cache.has(guildRole.id)) {
-				await member.roles.add(guildRole);
+				member.roles.add(guildRole);
 			}
 		}
 	}
