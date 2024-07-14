@@ -12,7 +12,7 @@ interface PingRoleConfig {
 	messageId: string;
 }
 
-const reactChannelId = "361329886356439051";
+const reactChannelId = "500314446229667860";
 
 let config: PingRoleConfig;
 let client: Client;

@@ -237,19 +237,14 @@ client.on("messageCreate", async (msg) => {
 ///
 
 client.on("messageReactionAdd", async (react, user) => {
-	console.log("reaction added");
 	if (!client.user || user.id === client.user.id) return;
-	console.log("loading reaction data...");
 
 	const fullReact = react.partial ? await react.fetch() : react;
 	const fullUser = user.partial ? await user.fetch() : user;
 
-	console.log("fetched reaction data");
-
 	for (const module of modules) {
 		try {
 			if (module.onReactionAdd) {
-				console.log("handing off reaction to " + module.name);
 				module.onReactionAdd(fullReact, fullUser);
 			}
 		} catch (err: unknown) {
