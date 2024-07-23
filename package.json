@@ -4,6 +4,7 @@
 		"@discordjs/voice": "^0.16.1",
 		"@distube/youtube": "^1.0.2",
 		"@distube/ytdl-core": "^4.13.5",
+		"@distube/ytsr": "^2.0.4",
 		"@types/node": "^20.12.2",
 		"bufferutil": "^4.0.6",
 		"cron": "^2.1.0",
@@ -21,8 +22,7 @@
 		"ts-node": "^10.9.2",
 		"utf-8-validate": "^5.0.9",
 		"yt-search": "^2.11.1",
-		"ytpl": "^2.3.0",
-		"ytsr": "^3.8.4"
+		"ytpl": "^2.3.0"
 	},
 	"name": "nanobot",
 	"version": "1.0.0",
@@ -45,5 +45,5 @@
 	},
 	"author": "RozaLily",
 	"license": "Unlicensed",
-	"packageManager": "yarn@4.1.1"
+	"packageManager": "yarn@4.3.1"
 }
