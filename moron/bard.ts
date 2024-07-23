@@ -27,7 +27,7 @@ import {
 } from "discord.js";
 import isUrl from "is-url";
 import ytpl from "ytpl";
-import ytsr from "ytsr";
+import ytsr from "@distube/ytsr";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import {
@@ -619,7 +619,6 @@ export async function playAudioCommand(
 	if (queryType === "searchTerm") {
 		const searchResults = ytsr(item, {
 			limit: 20,
-			pages: 1,
 			safeSearch: false,
 		});
 

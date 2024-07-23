@@ -274,7 +274,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@distube/ytsr@npm:^2.0.0":
+"@distube/ytsr@npm:^2.0.0, @distube/ytsr@npm:^2.0.4":
   version: 2.0.4
   resolution: "@distube/ytsr@npm:2.0.4"
   dependencies:
@@ -2181,6 +2181,7 @@ __metadata:
     "@discordjs/voice": "npm:^0.16.1"
     "@distube/youtube": "npm:^1.0.2"
     "@distube/ytdl-core": "npm:^4.13.5"
+    "@distube/ytsr": "npm:^2.0.4"
     "@types/cron": "npm:^2.0.0"
     "@types/is-url": "npm:^1.2.30"
     "@types/node": "npm:^20.12.2"
@@ -2204,7 +2205,6 @@ __metadata:
     utf-8-validate: "npm:^5.0.9"
     yt-search: "npm:^2.11.1"
     ytpl: "npm:^2.3.0"
-    ytsr: "npm:^3.8.4"
   languageName: unknown
   linkType: soft
 
@@ -3298,14 +3298,5 @@ __metadata:
   dependencies:
     miniget: "npm:^4.2.2"
   checksum: 10c0/b8d0acf447ec4cf0be8bbe032ea6b8048e58a9b98ab886718ac24561ed4f1fa485a0a042a4d0babe4b075591af1db8d842fa74148845696c4261bd14cc1f7c68
-  languageName: node
-  linkType: hard
-
-"ytsr@npm:^3.8.4":
-  version: 3.8.4
-  resolution: "ytsr@npm:3.8.4"
-  dependencies:
-    miniget: "npm:^4.2.2"
-  checksum: 10c0/60c3cf75a504be346728e6b8db97bec0bc73f26c7c23b9c7f7b01e4d6aa7cc84d801b828b434a0e88dbdea594f486cb957097900e5f74b80b0ae29057481218e
   languageName: node
   linkType: hard
