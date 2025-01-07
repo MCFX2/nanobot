@@ -112,6 +112,42 @@ async function pinMessage(
 		msgContent = " ";
 	}
 
+	// check if the user is in the guild
+	if (post.author) {
+		const member = await post.guild?.members.fetch(post.author.id);
+
+		if (member) {
+			const pointRoles = [
+				"849100332855590952", // 1 point
+				"849100411566161950", // 2 points
+				"849100464297476116", // 3 points
+				"849100509969121301", // 4 points
+				"849100558475460618", // prize eligible
+			];
+
+			// fetch the user's roles
+			const memberRoles = member.roles.cache;
+			// if the user has the prize role, do nothing
+			if (memberRoles.has(pointRoles[4])) return;
+			// if user has anything from the list, remove it and give the next one on the list
+			let roleAdded = false;
+			for (let i = 0; i < pointRoles.length - 1; i++) {
+				if (memberRoles.has(pointRoles[i])) {
+					await member.roles.remove(pointRoles[i]);
+					// don't await this, just move on
+					member.roles.add(pointRoles[i + 1]);
+					roleAdded = true;
+					break;
+				}
+			}
+			if (!roleAdded) {
+				// give 1 point if the user has no roles from the list
+				// don't await this, just move on
+				member.roles.add(pointRoles[0]);
+			}
+		}
+	}
+
 	const postEmbed = new EmbedBuilder()
 		.setColor("Red")
 		.setTitle("Click here to jump to message")
