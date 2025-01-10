@@ -438,6 +438,16 @@ async function optionalPlaylistPrompt(
 	videoId: string,
 	voiceChannel: VoiceBasedChannel,
 ) {
+	const channel = interaction.channel;
+	if (!channel || channel.isDMBased()) {
+		interaction.reply({
+			content:
+				"i can't do that in a DM channel. or whatever fresh hell we're in right now",
+			ephemeral: true,
+		});
+		return;
+	}
+
 	const playlistItems = await ytpl(playlistId, {
 		limit: Number.POSITIVE_INFINITY,
 		pages: Number.POSITIVE_INFINITY,
@@ -486,8 +496,8 @@ async function optionalPlaylistPrompt(
 	});
 
 	// wait for a response
-	const response = await interaction.channel
-		?.awaitMessageComponent({
+	const response = await channel
+		.awaitMessageComponent({
 			time: 30000,
 		})
 		.catch((e) => {
