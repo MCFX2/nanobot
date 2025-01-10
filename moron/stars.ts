@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import {
+	type ApplicationEmoji,
 	type Client,
 	EmbedBuilder,
 	type GuildEmoji,
@@ -101,7 +102,7 @@ async function addPin(messageId: string): Promise<boolean> {
 
 async function pinMessage(
 	client: Client<boolean>,
-	reactType: GuildEmoji | ReactionEmoji,
+	reactType: GuildEmoji | ReactionEmoji | ApplicationEmoji,
 	post: Message<boolean> | PartialMessage,
 ) {
 	// verify it is not already starred and add it to list if not
