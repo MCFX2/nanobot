@@ -1,7 +1,7 @@
 import type { Client, Message, MessageReaction, User } from "discord.js";
+import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import { readCacheFileAsJson, writeCacheFileAsJson } from "./util";
-import { Logger, WarningLevel } from "./logger";
 
 interface PingRoleConfig {
 	roles: {

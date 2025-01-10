@@ -1,3 +1,4 @@
+import type internal from "node:stream";
 import {
 	type AudioPlayer,
 	type AudioPlayerState,
@@ -11,6 +12,8 @@ import {
 	getVoiceConnection,
 	joinVoiceChannel,
 } from "@discordjs/voice";
+import ytdl from "@distube/ytdl-core";
+import ytsr from "@distube/ytsr";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -27,7 +30,6 @@ import {
 } from "discord.js";
 import isUrl from "is-url";
 import ytpl from "ytpl";
-import ytsr from "@distube/ytsr";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import {
@@ -37,8 +39,6 @@ import {
 	readCacheFileAsJson,
 	respond,
 } from "./util";
-import type internal from "node:stream";
-import ytdl from "@distube/ytdl-core";
 
 const devMode: boolean = true;
 

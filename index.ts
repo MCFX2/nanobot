@@ -17,10 +17,10 @@ import { daily_init } from "./moron/daily";
 import { Logger, WarningLevel } from "./moron/logger";
 import { MMO } from "./moron/mmo/mmo";
 import type { MoronModule } from "./moron/moronmodule";
+import { PingRole } from "./moron/pingroles";
 import { Reactor } from "./moron/reactor";
 import { Stars } from "./moron/stars";
 import { clientID, token } from "./tokens.json";
-import { PingRole } from "./moron/pingroles";
 
 export class ExtendedClient extends Client {
 	commands: Collection<
