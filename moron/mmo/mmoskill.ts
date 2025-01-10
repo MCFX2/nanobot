@@ -30,7 +30,7 @@ export function startSkill(
 ) {
 	setTimeout(() => {
 		const channel = prompt.channel;
-		if (!channel) {
+		if (!channel || channel.isDMBased()) {
 			mmoLogger.log(
 				"Invalid channel when trying to notify skill completion",
 				WarningLevel.Error,

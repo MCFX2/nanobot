@@ -135,5 +135,9 @@ export async function check_smbc() {
 		.setTimestamp(pubDate)
 		.setFooter({ text: altText });
 
-	channel.send({ embeds: [smbcEmbed] });
+	if (!channel.isDMBased()) {
+		channel.send({ embeds: [smbcEmbed] });
+	} else {
+		logger.log("DM channels are not supported!", WarningLevel.Error);
+	}
 }

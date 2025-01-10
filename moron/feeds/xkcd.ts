@@ -129,5 +129,9 @@ export async function check_xkcd() {
 		.setTimestamp(pubDate)
 		.setFooter({ text: altText });
 
-	channel.send({ embeds: [xkcdEmbed] });
+	if (!channel.isDMBased()) {
+		channel.send({ embeds: [xkcdEmbed] });
+	} else {
+		logger.log("DM channels are not supported!", WarningLevel.Error);
+	}
 }

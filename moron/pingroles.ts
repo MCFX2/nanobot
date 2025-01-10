@@ -43,9 +43,9 @@ async function pingrole_init(newClient: Client) {
 			return;
 		}
 
-		if (!channel.isTextBased()) {
+		if (!channel.isTextBased() || channel.isDMBased()) {
 			logger.log(
-				`Channel with ID ${reactChannelId} is not a text channel`,
+				`Channel with ID ${reactChannelId} is not a text channel or is in a DM`,
 				WarningLevel.Error,
 			);
 			return;
