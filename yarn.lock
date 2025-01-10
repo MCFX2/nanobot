@@ -251,7 +251,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@distube/ytdl-core@npm:^4.13.5, @distube/ytdl-core@npm:^4.14.2":
+"@distube/ytdl-core@npm:4.15.6":
+  version: 4.15.6
+  resolution: "@distube/ytdl-core@npm:4.15.6"
+  dependencies:
+    http-cookie-agent: "npm:^6.0.8"
+    https-proxy-agent: "npm:^7.0.6"
+    m3u8stream: "npm:^0.8.6"
+    miniget: "npm:^4.2.3"
+    sax: "npm:^1.4.1"
+    tough-cookie: "npm:^4.1.4"
+    undici: "npm:five"
+  checksum: 10c0/77d5223f894779977bc2c21d79dc992c00a63d386b25a4aa4652e8904b21f678570f10b6cea1e04c0a8a62ce863d57c2ea14e3393d6608eda79bfe3657deb150
+  languageName: node
+  linkType: hard
+
+"@distube/ytdl-core@npm:^4.14.2":
   version: 4.15.8
   resolution: "@distube/ytdl-core@npm:4.15.8"
   dependencies:
@@ -2297,7 +2312,7 @@ __metadata:
     "@discordjs/opus": "npm:^0.9.0"
     "@discordjs/voice": "npm:^0.18.0"
     "@distube/youtube": "npm:^1.0.2"
-    "@distube/ytdl-core": "npm:^4.13.5"
+    "@distube/ytdl-core": "npm:4.15.6"
     "@distube/ytsr": "npm:^2.0.4"
     "@types/is-url": "npm:^1.2.30"
     "@types/node": "npm:^20.12.2"
