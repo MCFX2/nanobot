@@ -17,5 +17,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		playAudioCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

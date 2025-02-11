@@ -11,5 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		skipCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

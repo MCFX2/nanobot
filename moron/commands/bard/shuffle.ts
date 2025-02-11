@@ -11,5 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		shuffleCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

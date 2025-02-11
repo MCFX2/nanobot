@@ -46,5 +46,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		registerSimpleChatTrigger(interaction);
 	},
-	disable: false,
+	disable: true,
 };

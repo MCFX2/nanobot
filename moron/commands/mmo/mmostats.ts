@@ -15,5 +15,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		debugStatCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

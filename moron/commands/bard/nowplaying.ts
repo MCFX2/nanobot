@@ -11,5 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		nowPlayingCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

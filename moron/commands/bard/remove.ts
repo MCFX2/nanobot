@@ -17,5 +17,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		removeCommand(interaction);
 	},
-	disable: false,
+	disable: true,
 };

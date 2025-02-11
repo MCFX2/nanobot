@@ -38,5 +38,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		registerNewReaction(interaction);
 	},
-	disable: false,
+	disable: true,
 };

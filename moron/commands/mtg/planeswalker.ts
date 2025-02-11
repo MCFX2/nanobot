@@ -17,5 +17,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		planeswalkerAbility(interaction);
 	},
-	disable: false,
+	disable: true,
 };
