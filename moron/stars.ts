@@ -3,17 +3,21 @@ import {
 	type ApplicationEmoji,
 	type Client,
 	EmbedBuilder,
+	type Guild,
 	type GuildEmoji,
+	GuildMember,
 	type Message,
 	type MessageReaction,
 	type PartialMessage,
 	type ReactionEmoji,
 	type TextChannel,
+	type User,
 } from "discord.js";
 import {
 	ReactsToTrigger,
 	StarDBFile,
 	StarDBFolder,
+	DisablePoints,
 } from "../config/stars.json";
 import { iconicMemes, serverLog } from "../groche-channels.json";
 import { Logger, WarningLevel } from "./logger";
@@ -28,7 +32,7 @@ import type { FSError } from "./util";
 	- Pinned messages go to serverLog instead of iconicMemes
 */
 
-const devMode = false;
+const devMode = true;
 
 const logger: Logger = new Logger("stars", WarningLevel.Warning);
 
@@ -40,8 +44,6 @@ export const Stars: MoronModule = {
 
 const pinnedMessages: string[] = [];
 const pinnedMessagesFile: string = StarDBFolder + StarDBFile;
-
-let pinnedMessagesLoaded = false;
 
 let clientInstance: Client;
 
@@ -78,8 +80,6 @@ async function stars_init(client: Client) {
 	} else {
 		logger.log("started in dev mode", WarningLevel.Warning);
 	}
-
-	pinnedMessagesLoaded = true;
 }
 
 async function addPin(messageId: string): Promise<boolean> {
@@ -100,6 +100,46 @@ async function addPin(messageId: string): Promise<boolean> {
 	return false;
 }
 
+async function awardPoint(author: User | null, guild: Guild | null) {
+	if (!author || !guild) {
+		return;
+	}
+
+	const member = await guild.members.fetch(author.id);
+	if (!member) {
+		return;
+	}
+
+	const pointRoles = [
+		"849100332855590952", // 1 point
+		"849100411566161950", // 2 points
+		"849100464297476116", // 3 points
+		"849100509969121301", // 4 points
+		"849100558475460618", // prize eligible
+	];
+
+	// fetch the user's roles
+	const memberRoles = member.roles.cache;
+	// if the user has the prize role, do nothing
+	if (memberRoles.has(pointRoles[4])) return;
+	// if user has anything from the list, remove it and give the next one on the list
+	let roleAdded = false;
+	for (let i = 0; i < pointRoles.length - 1; i++) {
+		if (memberRoles.has(pointRoles[i])) {
+			await member.roles.remove(pointRoles[i]);
+			// don't await this, just move on
+			member.roles.add(pointRoles[i + 1]);
+			roleAdded = true;
+			break;
+		}
+	}
+	if (!roleAdded) {
+		// give 1 point if the user has no roles from the list
+		// don't await this, just move on
+		member.roles.add(pointRoles[0]);
+	}
+}
+
 async function pinMessage(
 	client: Client<boolean>,
 	reactType: GuildEmoji | ReactionEmoji | ApplicationEmoji,
@@ -113,40 +153,8 @@ async function pinMessage(
 		msgContent = " ";
 	}
 
-	// check if the user is in the guild
-	if (post.author) {
-		const member = await post.guild?.members.fetch(post.author.id);
-
-		if (member) {
-			const pointRoles = [
-				"849100332855590952", // 1 point
-				"849100411566161950", // 2 points
-				"849100464297476116", // 3 points
-				"849100509969121301", // 4 points
-				"849100558475460618", // prize eligible
-			];
-
-			// fetch the user's roles
-			const memberRoles = member.roles.cache;
-			// if the user has the prize role, do nothing
-			if (memberRoles.has(pointRoles[4])) return;
-			// if user has anything from the list, remove it and give the next one on the list
-			let roleAdded = false;
-			for (let i = 0; i < pointRoles.length - 1; i++) {
-				if (memberRoles.has(pointRoles[i])) {
-					await member.roles.remove(pointRoles[i]);
-					// don't await this, just move on
-					member.roles.add(pointRoles[i + 1]);
-					roleAdded = true;
-					break;
-				}
-			}
-			if (!roleAdded) {
-				// give 1 point if the user has no roles from the list
-				// don't await this, just move on
-				member.roles.add(pointRoles[0]);
-			}
-		}
+	if (!DisablePoints) {
+		awardPoint(post.author, post.guild);
 	}
 
 	const postEmbed = new EmbedBuilder()
@@ -203,24 +211,15 @@ async function stars_onStarAdded(reaction: MessageReaction) {
 }
 
 const reactTexts = [
-	"this is offensive in some countries",
-	"wowzers",
-	"gaming moment",
-	"hot",
-	"what",
-	"i am so proud of you",
+	"we're so back",
+	"it's so over",
+	"feels good man",
+	"feels bad man",
 	"put that in your pipe and smoke it",
-	"i don't get this one",
-	"fatherless behavior",
-	"you are a bad person",
-	"you are a good person",
-	"wholesome 100",
-	"i am going to tell my kids this was how the world ended",
-	"you are going to brazil",
-	"you are going to horny jail",
-	"you are going to jail",
-	"been there, done that",
-	"can u xplain",
+	"i don't get it",
+	"fatherless",
+	"where is juice when you need him",
+	"a sentimental piece of trading history",
 ];
 
 function getReactText() {
