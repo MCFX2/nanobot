@@ -99,6 +99,9 @@ function loadAllCommands() {
 		const command = require(`${__dirname}/${file}`);
 
 		if ("data" in command && "execute" in command) {
+			if ("disable" in command && command.disable) {
+				continue;
+			}
 			client.commands.set(command.data.name, command);
 			commandBlobs.push(command.data.toJSON());
 		} else {

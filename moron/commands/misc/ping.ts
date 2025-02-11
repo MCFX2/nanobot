@@ -10,4 +10,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		interaction.reply("you are giving me a headache");
 	},
+	disable: false,
 };

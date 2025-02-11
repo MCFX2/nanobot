@@ -11,4 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		mineCommand(interaction);
 	},
+	disable: false,
 };

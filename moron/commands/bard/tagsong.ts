@@ -19,4 +19,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		tagCommand(interaction);
 	},
+	disable: false,
 };

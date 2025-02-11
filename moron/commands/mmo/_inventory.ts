@@ -8,4 +8,5 @@ module.exports = {
 		.setName("inventory")
 		.setDescription("Check your inventory"),
 	async execute(interaction: ChatInputCommandInteraction) {},
+	disable: false,
 };

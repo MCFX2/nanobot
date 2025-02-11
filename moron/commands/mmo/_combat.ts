@@ -11,4 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		combatCommand(interaction);
 	},
+	disable: false,
 };

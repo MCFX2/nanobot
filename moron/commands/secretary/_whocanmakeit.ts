@@ -30,4 +30,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		whoCanMakeIt(interaction);
 	},
+	disable: false,
 };

@@ -43,4 +43,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		pingLiberals(interaction);
 	},
+	disable: false,
 };

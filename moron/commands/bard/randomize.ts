@@ -11,4 +11,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		randomizeCommand(interaction);
 	},
+	disable: false,
 };

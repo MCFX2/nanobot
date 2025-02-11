@@ -17,4 +17,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		queueCommand(interaction);
 	},
+	disable: false,
 };

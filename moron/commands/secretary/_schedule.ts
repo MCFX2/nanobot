@@ -27,4 +27,5 @@ module.exports = {
 	async execute(interaction: ChatInputCommandInteraction) {
 		setSchedule(interaction);
 	},
+	disable: false,
 };
