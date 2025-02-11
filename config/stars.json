@@ -1,6 +1,6 @@
 {
 	"StarDBFolder": "./db/",
 	"StarDBFile": "pinned_messages.dat",
-	"ReactsToTrigger": 1,
+	"ReactsToTrigger": 5,
 	"DisablePoints": true
 }

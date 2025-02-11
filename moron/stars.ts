@@ -19,7 +19,7 @@ import {
 	StarDBFolder,
 	DisablePoints,
 } from "../config/stars.json";
-import { lounge, testTempChannel } from "../clockwork-channels.json";
+import { bestOfClockwork, testTempChannel } from "../clockwork-channels.json";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import type { FSError } from "./util";
@@ -191,7 +191,7 @@ async function pinMessage(
 	}
 
 	const starChannel = client.channels.cache.get(
-		devMode ? testTempChannel : testTempChannel,
+		devMode ? testTempChannel : bestOfClockwork,
 	);
 	(starChannel as TextChannel).send({ embeds: additionalAttachments });
 }
