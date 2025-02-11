@@ -32,7 +32,7 @@ import type { FSError } from "./util";
 	- Pinned messages go to serverLog instead of iconicMemes
 */
 
-const devMode = true;
+const devMode = false;
 
 const logger: Logger = new Logger("stars", WarningLevel.Warning);
 
