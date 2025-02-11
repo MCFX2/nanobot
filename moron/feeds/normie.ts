@@ -1,6 +1,6 @@
 import type { Client, TextChannel } from "discord.js";
 import * as request from "request";
-import * as channels from "../../groche-channels.json";
+import * as channels from "../../clockwork-channels.json";
 import { Logger, WarningLevel } from "../logger";
 
 const logger: Logger = new Logger("feeds/normie", WarningLevel.Warning);
@@ -14,9 +14,7 @@ export function init_normie(clientInstance: Client) {
 const apiUrl: string = "https://meme-api.com/gimme";
 
 async function postReceived(jsonData: unknown) {
-	const chan = (await client.channels.fetch(
-		channels.grocheCentral,
-	)) as TextChannel;
+	const chan = (await client.channels.fetch(channels.lounge)) as TextChannel;
 
 	chan.send({
 		embeds: [

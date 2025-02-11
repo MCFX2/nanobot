@@ -19,7 +19,7 @@ import {
 	StarDBFolder,
 	DisablePoints,
 } from "../config/stars.json";
-import { iconicMemes, serverLog } from "../groche-channels.json";
+import { lounge, testTempChannel } from "../clockwork-channels.json";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import type { FSError } from "./util";
@@ -191,7 +191,7 @@ async function pinMessage(
 	}
 
 	const starChannel = client.channels.cache.get(
-		devMode ? serverLog : iconicMemes,
+		devMode ? testTempChannel : testTempChannel,
 	);
 	(starChannel as TextChannel).send({ embeds: additionalAttachments });
 }

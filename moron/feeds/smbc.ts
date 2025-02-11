@@ -1,6 +1,6 @@
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
 import RssParser from "rss-parser";
-import { grocheCentral, serverLog } from "../../groche-channels.json";
+import { lounge, testTempChannel } from "../../clockwork-channels.json";
 import { Logger, WarningLevel } from "../logger";
 import { getSingleElement, readCacheFileAsJson, writeCacheFile } from "../util";
 
@@ -121,7 +121,7 @@ export async function check_smbc() {
 	// send comic
 
 	const channel = (await client.channels.fetch(
-		devMode ? serverLog : grocheCentral,
+		devMode ? testTempChannel : testTempChannel,
 	)) as TextBasedChannel;
 
 	const smbcEmbed = new EmbedBuilder()

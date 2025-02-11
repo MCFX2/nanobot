@@ -1,6 +1,6 @@
 import { type Client, EmbedBuilder, type TextBasedChannel } from "discord.js";
 import RssParser from "rss-parser";
-import { grocheCentral } from "../../groche-channels.json";
+import { lounge } from "../../clockwork-channels.json";
 import { Logger, WarningLevel } from "../logger";
 import { getSingleElement, readCacheFile, writeCacheFile } from "../util";
 
@@ -106,9 +106,7 @@ export async function check_xkcd() {
 
 	// send comic
 
-	const channel = (await client.channels.fetch(
-		grocheCentral,
-	)) as TextBasedChannel;
+	const channel = (await client.channels.fetch(lounge)) as TextBasedChannel;
 
 	const explainUrl = todaysComic.guid.replace("xkcd", "explainxkcd");
 

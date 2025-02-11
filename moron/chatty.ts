@@ -1,5 +1,5 @@
 import type { ChatInputCommandInteraction, Client, Message } from "discord.js";
-import { serverLog } from "../groche-channels.json";
+import { testTempChannel } from "../clockwork-channels.json";
 import { Logger, WarningLevel } from "./logger";
 import type { MoronModule } from "./moronmodule";
 import {
@@ -280,7 +280,7 @@ async function chatty_onMessageSend(msg: Message) {
 	}
 
 	if (devMode) {
-		if (msg.channelId !== serverLog) {
+		if (msg.channelId !== testTempChannel) {
 			return;
 		}
 	} else {
