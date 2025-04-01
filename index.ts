@@ -129,7 +129,13 @@ loadAllCommands();
 
 // init modules
 
-const modules: MoronModule[] = [Reactor, Chatty, Stars, Bard, MMO, PingRole];
+const modules: MoronModule[] = [
+	/*Reactor,*/ Chatty,
+	Stars,
+	Bard,
+	MMO,
+	PingRole,
+];
 
 type InitCallback = (client: Client) => Promise<void>;
 

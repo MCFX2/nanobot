@@ -5,7 +5,6 @@ import {
 	EmbedBuilder,
 	type Guild,
 	type GuildEmoji,
-	GuildMember,
 	type Message,
 	type MessageReaction,
 	type PartialMessage,
