@@ -270,8 +270,6 @@ async function chatty_init(clientInstance: Client) {
 	}
 }
 
-const thesaurus = require("thesaurus");
-
 async function chatty_onMessageSend(msg: Message) {
 	if (!client || !client.user) {
 		logger.log(
@@ -281,7 +279,7 @@ async function chatty_onMessageSend(msg: Message) {
 		return;
 	}
 
-	/*if (devMode) {
+	if (devMode) {
 		if (msg.channelId !== serverLog) {
 			return;
 		}
@@ -293,105 +291,219 @@ async function chatty_onMessageSend(msg: Message) {
 		if (msg.channel.isDMBased()) {
 			return; // avoid colliding with storykeeper
 		}
-	}*/
+	}
 
-	// april fools 2025
-	// replace all user messages with a thesaurus ified version
-
-	if (msg.channel.isDMBased()) {
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) => `${topic} can go pretty fast id say`,
+				(topic) => `${topic} can barely move`,
+				(topic) => `${topic} cant go fast enough`,
+				(topic) => `${topic} is the slowest thing i have ever seen`,
+				(topic) =>
+					`why do you want to know how fast ${topic} can go, are u racing`,
+				(topic) => `idk but i can go faster than ${topic} for sure`,
+				(topic) => `${topic} is faster than ur mom`,
+			],
+			stringSet(
+				[
+					"how fast can",
+					"how quickly can",
+					"how rapidly can",
+					"how fast is",
+					"how quick is",
+					"how rapid is",
+					"how fast does",
+					"how quickly does",
+					"how rapidly does",
+				],
+				true,
+				true,
+			),
+			stringSet(["go", "run", "move", "execute", "progress"], true, true),
+		)
+	) {
 		return;
 	}
-
-	const text = msg.content;
-	const results = [];
-	for (const word of text.split(" ")) {
-		if (word.includes("@")) {
-			// don't thesaurusify mentions
-			results.push(word);
-			continue;
-		}
-
-		// also exclude anything that looks like a link or emoji
-		if (word.includes("http") || word.includes(":")) {
-			results.push(word);
-			continue;
-		}
-
-		if (word.includes("<") || word.includes(">")) {
-			results.push(word);
-			continue;
-		}
-
-		if (word.length < 3) {
-			results.push(word);
-			continue;
-		}
-
-		const roll = Math.random();
-		// 40% chance to thesaurusify word
-		const thesaurusifyChance = 0.5;
-		// 25% chance to scramble the word
-		const scrambleChance = 0.05;
-
-		if (roll > 1 - thesaurusifyChance) {
-			// thesaurusify
-			// convert to lower case
-			const lexicalWord = word.toLowerCase();
-			const thesaurusResults = thesaurus.find(lexicalWord);
-			if (thesaurusResults && thesaurusResults.length > 0) {
-				// try to preserve the original casing
-				// to simplify this logic, check 3 characters: first, last, and middle
-				let synonym =
-					thesaurusResults[Math.floor(Math.random() * thesaurusResults.length)];
-				const firstChar = word[0];
-				const lastChar = word[word.length - 1];
-				const middleChar = word[Math.floor(word.length / 2)];
-				if (firstChar === firstChar.toUpperCase()) {
-					synonym = synonym[0].toUpperCase() + synonym.substring(1);
-				}
-				if (lastChar === lastChar.toUpperCase()) {
-					synonym =
-						synonym.substring(0, synonym.length - 1) +
-						synonym[synonym.length - 1].toUpperCase();
-				}
-				if (middleChar === middleChar.toUpperCase()) {
-					// capitalize all letters except the first and last
-					synonym =
-						synonym[0] +
-						synonym.substring(1, synonym.length - 1).toUpperCase() +
-						synonym[synonym.length - 1];
-				}
-				console.log(`replacing '${word}' with '${synonym}'`);
-				results.push(synonym);
-			} else {
-				results.push(word);
-			}
-
-			continue;
-		}
-
-		if (roll > 1 - thesaurusifyChance - scrambleChance) {
-			// randomize the order of all characters except first and last
-			const chars = word.split("");
-			const firstChar = chars.shift();
-			const lastChar = chars.pop();
-			chars.sort(() => Math.random() - 0.5);
-			const scrambledWord = firstChar + chars.join("") + lastChar;
-			results.push(scrambledWord);
-			continue;
-		}
-
-		results.push(word);
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) =>
+					`everyone always asks "what is ${topic}" but nobody ever asks "how is ${topic}"`,
+			],
+			stringSet(["what is", "whats"], true, true),
+			[],
+		)
+	) {
+		return;
 	}
-
-	// send the message in the channel (with a user tag)
-	msg.channel.isSendable() &&
-		msg.channel.send({
-			content: `**${msg.author.username}:** ${results.join(" ")}`,
-			// try to preserve the original message's attachments
-			files: msg.attachments.map((attachment) => attachment.url),
-		});
-	msg.delete();
-
-	return;
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) => `wtf i love ${topic} now`,
+				(topic) =>
+					`ur making me seriously consider ${topic} for the first time`,
+				(topic) => `thats how u say ${topic} in my native language`,
+			],
+			stringSet(["peepee", "poopoo"], true, true),
+			stringSet(["peepee", "poopoo"], true, true),
+			true,
+			true,
+		)
+	) {
+		return;
+	}
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) => `well, i hate ${topic}`,
+				(topic) => `${topic}? really?`,
+				(topic) => `${topic} is gay as fuck`,
+				(topic) => `${topic} is like, _fine_, but you can do so much better`,
+				(topic) => `${topic} is pretty based ngl`,
+				(topic) => `${topic} do be kinda be wildin doe`,
+				(topic) =>
+					`my lawyers have advised me to cease contact with ${topic}, sorry`,
+			],
+			stringSet(
+				["love", "liked", "adore", "enjoy", "appreciate", "i like"],
+				true,
+				true,
+			),
+			[],
+		)
+	) {
+		return;
+	}
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) => `yeah? you're ${topic} retarded`,
+				(topic) => `oh really? you're ${topic} cute`,
+				(topic) =>
+					`ok but you are ${topic} wrong so put that in your pipe and smoke it`,
+				(_topic) => "and?",
+			],
+			stringSet(["you are", "youre"], true, true),
+			stringSet(
+				[
+					"wrong",
+					"retarded",
+					"stupid",
+					"dumb",
+					"bad",
+					"evil",
+					"gay",
+					"right",
+					"good",
+					"cute",
+					"sick",
+				],
+				true,
+				true,
+			),
+		)
+	) {
+		return;
+	}
+	if (
+		smartReply(
+			msg,
+			[
+				(topic) => `too bad ur getting more ${topic} whether u like it or not`,
+				(topic) => `i love ${topic}`,
+				(topic) => `i hate ${topic} too`,
+				(topic) =>
+					`ur problems with ${topic} are likely a product of problems at home`,
+				(topic) => `ngl u kinda got me thinking about ${topic} now`,
+				(topic) => `for someone who hates ${topic} u sure have a lot in common`,
+			],
+			stringSet(
+				[
+					"i hate",
+					"i despise",
+					"i cannot stand",
+					"i cant stand",
+					"i cant deal with",
+					"i am sick of",
+				],
+				true,
+				false,
+			),
+			[],
+			true,
+			false,
+			true,
+		)
+	) {
+		return;
+	}
+	if (
+		smartReply(
+			msg,
+			[
+				(_topic) => "placeholder1",
+				(_topic) => "placeholder2",
+				(_topic) => "placeholder3",
+			],
+			stringSet(["test1", "test2"], true, true),
+			stringSet(["test3", "test4"], true, true),
+		)
+	) {
+		return;
+	}
+	if (msg.content.length > 1000) {
+		basicReplyFunction([
+			"broo thats so many words",
+			"jesse what the fuck are you talking about",
+			"id put that on my tombstone but it wouldnt fit. it would probably fit on your moms though",
+			"i think i understood the first couple of words",
+			"https://tenor.com/view/talking-old-weird-crazy-mocking-gif-16113842",
+			"too long, did read",
+			"please, continue",
+			"have you considered getting into creative writing",
+			"i dont actually have enough RAM to store this message",
+			"i asked chatgpt to respond to this for me but it said token limit exceeded",
+			"say that again but in pirate speak",
+			"https://tenor.com/view/subway-surfer-gif-6241925",
+		])(msg);
+	} else if (msg.content.length > 200) {
+		basicReplyFunction([
+			"thats a lotta words",
+			"tldr",
+			"leftist memes be like",
+			"https://tenor.com/view/he-is-speaking-guy-explaining-with-a-whiteboard-some-guy-explaining-gif-19593300",
+			"can you just give me the executive summary im lost",
+			"you should submit this to the new york times",
+			"can you repeat that i wasnt paying attention",
+			"sorry that happened",
+			"happy for u",
+			"this message would not fit in a tweet",
+		])(msg);
+	} else {
+		if (
+			simpleChatTriggers.every((trigger) => {
+				if (
+					triggerIfMsgContains(
+						msg,
+						trigger.triggers,
+						basicReplyFunction(trigger.replies),
+					)
+				) {
+					// break on first match
+					return false;
+				}
+				return true;
+			})
+		) {
+			// proceed to check complex triggers (TODO)
+		} else {
+			return;
+		}
+	}
 }
