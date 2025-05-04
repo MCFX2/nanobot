@@ -387,9 +387,8 @@ async function chatty_onMessageSend(msg: Message) {
 				(topic) => `oh really? you're ${topic} cute`,
 				(topic) =>
 					`ok but you are ${topic} wrong so put that in your pipe and smoke it`,
-				(_topic) => "and?",
 			],
-			stringSet(["you are", "youre"], true, true),
+			stringSet(["you are", "youre", "thats", "that is"], true, true),
 			stringSet(
 				[
 					"wrong",
@@ -457,53 +456,193 @@ async function chatty_onMessageSend(msg: Message) {
 	) {
 		return;
 	}
-	if (msg.content.length > 1000) {
-		basicReplyFunction([
-			"broo thats so many words",
-			"jesse what the fuck are you talking about",
-			"id put that on my tombstone but it wouldnt fit. it would probably fit on your moms though",
-			"i think i understood the first couple of words",
-			"https://tenor.com/view/talking-old-weird-crazy-mocking-gif-16113842",
-			"too long, did read",
-			"please, continue",
-			"have you considered getting into creative writing",
-			"i dont actually have enough RAM to store this message",
-			"i asked chatgpt to respond to this for me but it said token limit exceeded",
-			"say that again but in pirate speak",
-			"https://tenor.com/view/subway-surfer-gif-6241925",
-		])(msg);
-	} else if (msg.content.length > 200) {
-		basicReplyFunction([
-			"thats a lotta words",
-			"tldr",
-			"leftist memes be like",
-			"https://tenor.com/view/he-is-speaking-guy-explaining-with-a-whiteboard-some-guy-explaining-gif-19593300",
-			"can you just give me the executive summary im lost",
-			"you should submit this to the new york times",
-			"can you repeat that i wasnt paying attention",
-			"sorry that happened",
-			"happy for u",
-			"this message would not fit in a tweet",
-		])(msg);
-	} else {
-		if (
-			simpleChatTriggers.every((trigger) => {
-				if (
-					triggerIfMsgContains(
-						msg,
-						trigger.triggers,
-						basicReplyFunction(trigger.replies),
-					)
-				) {
-					// break on first match
-					return false;
-				}
-				return true;
-			})
-		) {
-			// proceed to check complex triggers (TODO)
+	if (
+		smartReply(
+			msg,
+			[
+				(_topic) => {
+					const bad_square = "⬛";
+					const good_square = "🟩";
+					const yellow_square = "🟨";
+
+					const wordleWordLength = 5;
+					const wordleWordGuesses = 6;
+
+					let guessString = "";
+					// 0 = miss
+					// 1 = hint
+					// 2 = correct
+					let positions = new Array(wordleWordLength).fill(0);
+					let numGuesses = 0;
+
+					for (let i = 0; i < wordleWordGuesses; i++) {
+						numGuesses = i + 1;
+						// the algorithm is as follows:
+						// 1. each correct character is untouched
+						// 2. of the remaining characters...
+						// 3. if a character is a hint, it has a 50% chance of turning a _different_ character into a correct. If it does, it's treated as a miss for the below checks.
+						// 4. if a character is a miss, it has a 20% chance of turning into a correct
+						// 5. if a character is a miss, it has a 30% chance of turning into a hint
+						// 6. if all characters are correct except for one hint, the hint is immediately turned into a hit
+
+						const newPositions = [...positions];
+
+						// steps 1,2 are no-op
+
+						// step 3, hints have a 50% chance of turning a different character into a correct
+						// and if they do, they're converted to misses for the later steps
+						for (let j = 0; j < wordleWordLength; j++) {
+							if (newPositions[j] !== 1) {
+								continue;
+							}
+
+							// this step only deals with hints
+							const validChoices = [];
+							for (let k = 0; k < wordleWordLength; k++) {
+								if (k === j) {
+									continue;
+								}
+								if (newPositions[k] === 0 || newPositions[k] === 1) {
+									validChoices.push(k);
+								}
+							}
+
+							if (validChoices.length === 0) {
+								// no valid choices, just skip.
+								// the only way this can happen is if all other characters are correct,
+								// which is handled in step 6
+								break;
+							}
+
+							const choice = Math.floor(Math.random() * validChoices.length);
+							const index = validChoices[choice];
+							const oldValue = newPositions[index];
+
+							const isCorrect = Math.random() < 0.5;
+							if (isCorrect) {
+								// convert to correct
+								newPositions[index] = 2;
+								if (oldValue === 1) {
+									// also update current tile to a correct
+									newPositions[j] = 2;
+								} else {
+									// update current tile to a miss
+									newPositions[j] = 0;
+								}
+							} else {
+								// swap places with another valid choice
+								newPositions[index] = 1;
+								newPositions[j] = oldValue;
+							}
+						}
+
+						// step 4, misses have a 20% chance of turning into a correct
+						for (let j = 0; j < wordleWordLength; j++) {
+							if (newPositions[j] === 0 && Math.random() < 0.2) {
+								newPositions[j] = 2;
+							}
+						}
+
+						// step 5, misses have a 30% chance of turning into a hint
+						for (let j = 0; j < wordleWordLength; j++) {
+							if (newPositions[j] === 0 && Math.random() < 0.3) {
+								newPositions[j] = 1;
+							}
+						}
+
+						// step 6, if all characters are correct except for one hint, the hint is immediately turned into a hit
+						if (
+							newPositions.filter((pos) => pos === 2).length ===
+								wordleWordLength - 1 &&
+							newPositions.filter((pos) => pos === 1).length === 1
+						) {
+							for (let j = 0; j < wordleWordLength; j++) {
+								if (newPositions[j] === 1) {
+									newPositions[j] = 2;
+								}
+							}
+						}
+
+						// add the current guess to the string
+						for (let j = 0; j < wordleWordLength; j++) {
+							if (newPositions[j] === 2) {
+								guessString += good_square;
+							} else if (newPositions[j] === 1) {
+								guessString += yellow_square;
+							} else {
+								guessString += bad_square;
+							}
+						}
+						guessString += "\n";
+
+						// update the positions and go around again
+						positions = newPositions;
+
+						// break if all characters are correct
+						if (
+							positions.filter((pos) => pos === 2).length === wordleWordLength
+						) {
+							break;
+						}
+					}
+
+					const solved =
+						positions.filter((pos) => pos === 2).length === wordleWordLength;
+					return `Wordle ${solved ? numGuesses : "X"}/${wordleWordGuesses}*\n\n${guessString}`;
+				},
+			],
+			stringSet(["Wordle"], true, false),
+			[],
+			true,
+		)
+	)
+		if (msg.content.length > 1000) {
+			basicReplyFunction([
+				"broo thats so many words",
+				"jesse what the fuck are you talking about",
+				"id put that on my tombstone but it wouldnt fit. it would probably fit on your moms though",
+				"i think i understood the first couple of words",
+				"https://tenor.com/view/talking-old-weird-crazy-mocking-gif-16113842",
+				"too long, did read",
+				"please, continue",
+				"have you considered getting into creative writing",
+				"i dont actually have enough RAM to store this message",
+				"i asked chatgpt to respond to this for me but it said token limit exceeded",
+				"say that again but in pirate speak",
+				"https://tenor.com/view/subway-surfer-gif-6241925",
+			])(msg);
+		} else if (msg.content.length > 250) {
+			basicReplyFunction([
+				"thats a lotta words",
+				"tldr",
+				"leftist memes be like",
+				"https://tenor.com/view/he-is-speaking-guy-explaining-with-a-whiteboard-some-guy-explaining-gif-19593300",
+				"can you just give me the executive summary im lost",
+				"you should submit this to the new york times",
+				"can you repeat that i wasnt paying attention",
+				"sorry that happened",
+				"happy for u",
+				"this message would not fit in a tweet",
+			])(msg);
 		} else {
-			return;
+			if (
+				simpleChatTriggers.every((trigger) => {
+					if (
+						triggerIfMsgContains(
+							msg,
+							trigger.triggers,
+							basicReplyFunction(trigger.replies),
+						)
+					) {
+						// break on first match
+						return false;
+					}
+					return true;
+				})
+			) {
+				// proceed to check complex triggers (TODO)
+			} else {
+				return;
+			}
 		}
-	}
 }
